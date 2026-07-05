@@ -1,7 +1,6 @@
 "use client";
 
 import { Note } from "~/components/geist";
-import { Ambient } from "~/components/site/ambient";
 import { PostCard } from "~/components/site/post-card";
 import { usePrefs } from "~/components/site/prefs";
 import { Reveal } from "~/components/site/reveal";
@@ -11,7 +10,6 @@ export function WritingPage({ posts }: { posts: RouterOutputs["posts"]["list"] }
   const { t } = usePrefs();
   return (
     <div className="writing">
-      <Ambient />
       <div className="wrap page-pad">
         <div className="page-head page-head--center">
           <div>
