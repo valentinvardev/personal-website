@@ -6,7 +6,7 @@ import { Badge, Icon } from "~/components/geist";
 import type { IconName } from "~/components/geist/icons-data";
 import { formatBytes, shortDate, timeAgo } from "~/lib/time";
 import type { RouterOutputs } from "~/trpc/react";
-import { Monogram } from "./monogram";
+import { Logo } from "./logo";
 import { usePrefs } from "./prefs";
 
 export type PostRow = RouterOutputs["posts"]["list"][number];
@@ -39,7 +39,7 @@ export function PostCard({ post }: { post: PostRow }) {
   return (
     <article className="wpost">
       <header className="wpost__head">
-        <Monogram size={38} />
+        <Logo mark height={32} />
         <div className="wpost__who">
           <div className="wpost__name">
             Valentín Varela

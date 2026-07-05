@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { Icon } from "~/components/geist";
 import { ButtonLink } from "./button-link";
-import { Monogram } from "./monogram";
+import { Logo } from "./logo";
 import { usePrefs } from "./prefs";
 
 /* Icono hamburguesa (estilo Lucide, no está en el set generado). */
@@ -101,9 +101,8 @@ export function TopNav() {
     <>
       <nav className={"nav" + (scrolled ? " nav--scrolled" : "")}>
         <div className="nav__inner">
-          <Link href="/" className="brand">
-            <Monogram />
-            <span className="brand__name">Valentín Varela</span>
+          <Link href="/" className="brand" aria-label="Inicio">
+            <Logo height={30} />
           </Link>
           <div className="nav__links">
             {links.map(([href, label]) => (
@@ -144,9 +143,8 @@ export function TopNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mnav__head">
-              <Link href="/" className="brand" onClick={() => setOpen(false)}>
-                <Monogram size={28} />
-                <span className="mnav__name">Valentín Varela</span>
+              <Link href="/" className="brand" aria-label="Inicio" onClick={() => setOpen(false)}>
+                <Logo height={26} />
               </Link>
               <button
                 type="button"

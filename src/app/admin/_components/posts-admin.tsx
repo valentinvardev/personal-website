@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 
 import { Badge, Button, Icon, Input, Note, Spinner, Switch, Textarea } from "~/components/geist";
-import { Monogram } from "~/components/site/monogram";
+import { Logo } from "~/components/site/logo";
 import { formatBytes, shortDate } from "~/lib/time";
 import { api, type RouterOutputs } from "~/trpc/react";
 
@@ -92,7 +92,7 @@ export function PostsAdmin() {
             <Composer key={p.id} post={p} onDone={() => setEditing(null)} />
           ) : (
             <div key={p.id} className="adm-item">
-              <Monogram size={34} />
+              <Logo mark height={28} />
               <div className="adm-item__body">
                 <div className="adm-item__head">
                   <strong>{p.title ?? (p.body.length > 60 ? p.body.slice(0, 60) + "…" : p.body)}</strong>
@@ -210,7 +210,7 @@ function Composer({ post, onDone }: { post?: PostRow; onDone: () => void }) {
   return (
     <div className="composer">
       <div className="composer__head">
-        <Monogram size={38} />
+        <Logo mark height={32} />
         <div className="composer__fields">
           <input
             className="composer__title"

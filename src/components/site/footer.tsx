@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Icon } from "~/components/geist";
 import { LINKS } from "~/lib/content";
-import { Monogram } from "./monogram";
+import { Logo } from "./logo";
 import { usePrefs } from "./prefs";
 
 export function Footer() {
@@ -21,10 +21,7 @@ export function Footer() {
     <footer className="footer">
       <div className="footer__inner">
         <div className="footer__brand">
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <Monogram size={28} />
-            <strong>Valentín Varela</strong>
-          </div>
+          <Logo height={34} />
           <p>{t.footer.tag}</p>
           <div className="footer__social">
             {LINKS.map((l) => (
