@@ -10,7 +10,7 @@ export function AboutPage() {
   return (
     <div className="wrap page-pad">
       <div className="about-hero">
-        <Avatar name="Valentín Varela" size={72} />
+        <Avatar src="/valentin.jpg" name="Valentín Varela" size={72} />
         <div>
           <div className="eyebrow">{t.about.eyebrow}</div>
           <h1>{t.about.title}</h1>
