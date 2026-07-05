@@ -1,30 +1,11 @@
-import type { BadgeColor } from "~/components/geist/badge";
 import type { IconName } from "~/components/geist/icons-data";
 
 /* =====================================================================
-   Contenido del sitio (ES / EN) — portado de _geist-design/personal-site.
+   Contenido del sitio (ES / EN) — textos de UI. Los proyectos, nichos y
+   tarjetas de material viven en la base y se editan desde /admin.
    ===================================================================== */
 
 export type Lang = "es" | "en";
-
-export interface ProjectLink {
-  label: string;
-  icon: IconName;
-  href?: string;
-  primary?: boolean;
-}
-
-export interface Project {
-  slug: string;
-  name: string;
-  role: string;
-  status: { color: BadgeColor; label: string };
-  stack: string[];
-  short: string;
-  long: string;
-  features: string[];
-  links: ProjectLink[];
-}
 
 export interface SocialLink {
   k: string;
@@ -35,7 +16,14 @@ export interface SocialLink {
 }
 
 export interface Content {
-  nav: { home: string; projects: string; about: string; contact: string; cta: string };
+  nav: {
+    home: string;
+    projects: string;
+    niches: string;
+    about: string;
+    contact: string;
+    cta: string;
+  };
   hero: {
     badge: string;
     title: string;
@@ -59,6 +47,24 @@ export interface Content {
     pageLead: string;
     highlights: string;
     stackLabel: string;
+    viewSite: string;
+    openLive: string;
+    code: string;
+    filterAll: string;
+    empty: string;
+  };
+  niches: {
+    eyebrow: string;
+    title: string;
+    pageLead: string;
+    homeSub: string;
+    all: string;
+    view: string;
+    one: string;
+    many: string;
+    projectsTitle: string;
+    materialTitle: string;
+    materialEmpty: string;
   };
   writing: {
     eyebrow: string;
@@ -107,15 +113,7 @@ export interface Content {
   };
   footer: { tag: string; site: string; contact: string; built: string };
   preview: { empty: string; error: string };
-  projectData: Project[];
 }
-
-const STACK = {
-  msp: ["Next.js 15", "tRPC", "Prisma", "Supabase", "MercadoPago", "TypeScript"],
-  store: ["Next.js", "T3 Stack", "tRPC", "Prisma", "PostgreSQL", "Tailwind"],
-  sinchi: ["Next.js", "Python", "Face Recognition", "AWS", "Supabase"],
-  lpg: ["Next.js", "Anthropic API", "tRPC", "Prisma", "Tailwind"],
-};
 
 export const LINKS: SocialLink[] = [
   { k: "whatsapp", icon: "whatsapp", label: "WhatsApp", handle: "+54 9 …", href: "https://wa.me/" },
@@ -142,15 +140,15 @@ export const LINKS: SocialLink[] = [
   },
 ];
 
-export const PROJECT_ACCENT: Record<string, { icon: IconName; color: string }> = {
-  "media-seller-platform": { icon: "camera", color: "var(--ds-blue-700)" },
-  "online-store": { icon: "shopping-bag", color: "var(--ds-purple-700)" },
-  sinchi: { icon: "brain", color: "var(--ds-teal-700)" },
-  "landing-page-generator": { icon: "layers", color: "var(--ds-amber-600)" },
-};
-
 const es: Content = {
-  nav: { home: "Inicio", projects: "Proyectos", about: "Sobre mí", contact: "Contacto", cta: "Trabajemos juntos" },
+  nav: {
+    home: "Inicio",
+    projects: "Proyectos",
+    niches: "Nichos",
+    about: "Sobre mí",
+    contact: "Contacto",
+    cta: "Trabajemos juntos",
+  },
   hero: {
     badge: "Disponible para proyectos freelance",
     title: "Desarrollador de sistemas y diseñador visual.",
@@ -183,6 +181,24 @@ const es: Content = {
     pageLead: "Una selección de plataformas que diseñé y construí de punta a punta.",
     highlights: "Lo destacado",
     stackLabel: "Stack",
+    viewSite: "Ver sitio",
+    openLive: "Abrir en vivo",
+    code: "Código",
+    filterAll: "Todos",
+    empty: "Todavía no hay proyectos para mostrar.",
+  },
+  niches: {
+    eyebrow: "Dónde trabajo",
+    title: "Nichos",
+    pageLead: "Cada nicho reúne los proyectos, aprendizajes y material de un mismo terreno.",
+    homeSub: "Los mundos donde ya construí y sigo construyendo.",
+    all: "Ver todos",
+    view: "Ver nicho",
+    one: "proyecto",
+    many: "proyectos",
+    projectsTitle: "Proyectos",
+    materialTitle: "Material",
+    materialEmpty: "Todavía no hay material en este nicho.",
   },
   writing: {
     eyebrow: "Escritos",
@@ -267,87 +283,18 @@ const es: Content = {
     empty: "Todavía no hay capturas de este proyecto.",
     error: "No se pudieron cargar las capturas. Probá de nuevo en un momento.",
   },
-  projectData: [
-    {
-      slug: "media-seller-platform",
-      name: "Media Seller Platform",
-      role: "Diseño de producto + full-stack",
-      status: { color: "green", label: "En producción" },
-      stack: STACK.msp,
-      short: "Los fotógrafos de eventos deportivos venden sus fotos buscadas por número de dorsal.",
-      long: "Plataforma donde los fotógrafos suben las fotos de una carrera y cada corredor encuentra las suyas buscando por su número de dorsal. Previews con marca de agua, pago con MercadoPago y descarga con token temporal.",
-      features: [
-        "Búsqueda de fotos por número de dorsal",
-        "Previews con marca de agua automática",
-        "Pagos con MercadoPago",
-        "Tokens de descarga de 72 horas",
-        "Galería lightbox de alto rendimiento",
-      ],
-      links: [
-        { label: "Ver sitio", icon: "globe", primary: true },
-        { label: "Código", icon: "github" },
-      ],
-    },
-    {
-      slug: "online-store",
-      name: "Online Store",
-      role: "Full-stack",
-      status: { color: "green", label: "En producción" },
-      stack: STACK.store,
-      short: "Tienda online moderna con catálogo, carrito, checkout y panel de administración.",
-      long: "E-commerce completo sobre el stack T3: catálogo con búsqueda, carrito, checkout con pagos integrados y un panel de administración pensado para escalar sin fricción.",
-      features: [
-        "Catálogo con búsqueda y filtros",
-        "Carrito y checkout integrados",
-        "Panel de administración",
-        "Pagos y gestión de pedidos",
-      ],
-      links: [
-        { label: "Ver sitio", icon: "globe", primary: true },
-        { label: "Código", icon: "github" },
-      ],
-    },
-    {
-      slug: "sinchi",
-      name: "Sinchi",
-      role: "Fundador · producto + ingeniería",
-      status: { color: "amber", label: "En beta" },
-      stack: STACK.sinchi,
-      short: "SaaS de reconocimiento facial: encontrá tus fotos de un evento con una selfie.",
-      long: "Producto SaaS que usa reconocimiento facial para que, en un evento con miles de fotos, cada persona encuentre las suyas con solo una selfie. Pensado para fotógrafos y organizadores que quieren vender más rápido.",
-      features: [
-        "Reconocimiento facial a partir de una selfie",
-        "Indexado de miles de imágenes",
-        "Panel para fotógrafos y organizadores",
-        "Venta y descarga integradas",
-      ],
-      links: [{ label: "Sitio", icon: "globe", primary: true }],
-    },
-    {
-      slug: "landing-page-generator",
-      name: "Landing Page Generator",
-      role: "Full-stack",
-      status: { color: "blue", label: "Activo" },
-      stack: STACK.lpg,
-      short: "Herramienta de marketing de afiliados: describís una landing y se genera al instante.",
-      long: "Generador de landing pages para campañas de afiliados: describís lo que querés y obtenés una página lista al instante, con CMS de campañas, analytics de conversión y deploy en un clic.",
-      features: [
-        "Generación instantánea de landings",
-        "CMS para campañas de afiliados",
-        "Analytics de conversión",
-        "Deploy con un clic",
-      ],
-      links: [
-        { label: "Ver herramienta", icon: "globe", primary: true },
-        { label: "Código", icon: "github" },
-      ],
-    },
-  ],
 };
 
 const en: Content = {
   ...es,
-  nav: { home: "Home", projects: "Projects", about: "About", contact: "Contact", cta: "Let's work together" },
+  nav: {
+    home: "Home",
+    projects: "Projects",
+    niches: "Niches",
+    about: "About",
+    contact: "Contact",
+    cta: "Let's work together",
+  },
   hero: {
     badge: "Available for freelance work",
     title: "Systems developer & visual designer.",
@@ -380,6 +327,24 @@ const en: Content = {
     pageLead: "A selection of platforms I designed and built end to end.",
     highlights: "Highlights",
     stackLabel: "Stack",
+    viewSite: "View site",
+    openLive: "Open live",
+    code: "Code",
+    filterAll: "All",
+    empty: "No projects to show yet.",
+  },
+  niches: {
+    eyebrow: "Where I work",
+    title: "Niches",
+    pageLead: "Each niche gathers the projects, learnings and material from the same terrain.",
+    homeSub: "The worlds where I've already built — and keep building.",
+    all: "View all",
+    view: "View niche",
+    one: "project",
+    many: "projects",
+    projectsTitle: "Projects",
+    materialTitle: "Material",
+    materialEmpty: "No material in this niche yet.",
   },
   writing: {
     eyebrow: "Writing",
@@ -459,74 +424,6 @@ const en: Content = {
     empty: "No screenshots for this project yet.",
     error: "Screenshots could not be loaded. Try again in a moment.",
   },
-  projectData: [
-    {
-      ...es.projectData[0]!,
-      role: "Product design + full-stack",
-      status: { color: "green", label: "In production" },
-      short: "Sports-event photographers sell their photos searched by bib number.",
-      long: "A platform where photographers upload a race's photos and each runner finds theirs by searching their bib number. Watermarked previews, MercadoPago payments and temporary download tokens.",
-      features: [
-        "Photo search by bib number",
-        "Automatic watermarked previews",
-        "MercadoPago payments",
-        "72-hour download tokens",
-        "High-performance lightbox gallery",
-      ],
-      links: [
-        { label: "View site", icon: "globe", primary: true },
-        { label: "Code", icon: "github" },
-      ],
-    },
-    {
-      ...es.projectData[1]!,
-      role: "Full-stack",
-      status: { color: "green", label: "In production" },
-      short: "Modern online store with catalog, cart, checkout and admin panel.",
-      long: "A full e-commerce on the T3 stack: searchable catalog, cart, checkout with integrated payments and an admin panel built to scale without friction.",
-      features: [
-        "Catalog with search and filters",
-        "Integrated cart and checkout",
-        "Admin panel",
-        "Payments and order management",
-      ],
-      links: [
-        { label: "View site", icon: "globe", primary: true },
-        { label: "Code", icon: "github" },
-      ],
-    },
-    {
-      ...es.projectData[2]!,
-      role: "Founder · product + engineering",
-      status: { color: "amber", label: "In beta" },
-      short: "Facial-recognition SaaS: find your event photos with a selfie.",
-      long: "A SaaS product that uses facial recognition so that, at an event with thousands of photos, each person finds theirs with just a selfie. Built for photographers and organizers who want to sell faster.",
-      features: [
-        "Facial recognition from a selfie",
-        "Indexing of thousands of images",
-        "Dashboard for photographers and organizers",
-        "Integrated sales and downloads",
-      ],
-      links: [{ label: "Site", icon: "globe", primary: true }],
-    },
-    {
-      ...es.projectData[3]!,
-      role: "Full-stack",
-      status: { color: "blue", label: "Active" },
-      short: "Affiliate marketing tool: describe a landing page and generate it instantly.",
-      long: "A landing-page generator for affiliate campaigns: describe what you want and get a ready page instantly, with a campaign CMS, conversion analytics and one-click deploy.",
-      features: [
-        "Instant landing-page generation",
-        "CMS for affiliate campaigns",
-        "Conversion analytics",
-        "One-click deploy",
-      ],
-      links: [
-        { label: "View tool", icon: "globe", primary: true },
-        { label: "Code", icon: "github" },
-      ],
-    },
-  ],
 };
 
 export const CONTENT: Record<Lang, Content> = { es, en };

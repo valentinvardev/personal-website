@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Note, Spinner, Tabs } from "~/components/geist";
-import type { Project } from "~/lib/content";
+import type { ProjectView } from "~/lib/catalog";
 import { api } from "~/trpc/react";
 import { usePrefs } from "./prefs";
 import { ProjectGlyph } from "./project-bits";
@@ -12,7 +12,7 @@ import { ProjectGlyph } from "./project-bits";
  * Modal "Ver sitio": muestra capturas de página completa del proyecto,
  * una por sección (tabs). La imagen se scrollea dentro del cuerpo del modal.
  */
-export function PreviewModal({ p, onClose }: { p: Project; onClose: () => void }) {
+export function PreviewModal({ p, onClose }: { p: ProjectView; onClose: () => void }) {
   const { t, lang } = usePrefs();
   const sections = api.showcase.byProject.useQuery({ slug: p.slug });
   const [active, setActive] = useState<string | undefined>(undefined);
@@ -56,7 +56,7 @@ export function PreviewModal({ p, onClose }: { p: Project; onClose: () => void }
         onClick={(e) => e.stopPropagation()}
       >
         <div className="pv__head">
-          <ProjectGlyph slug={p.slug} size={36} />
+          <ProjectGlyph icon={p.icon} color={p.color} size={36} />
           <h2>{p.name}</h2>
           <button type="button" className="pv__close" onClick={onClose} aria-label="Cerrar">
             ✕

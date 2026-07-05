@@ -1,25 +1,35 @@
 "use client";
 
 import { Badge, Icon } from "~/components/geist";
-import { PROJECT_ACCENT, type Content, type Project } from "~/lib/content";
+import type { IconName } from "~/components/geist/icons-data";
+import { StackChip } from "~/components/geist/tech-icon";
+import { accentVar, type ProjectView } from "~/lib/catalog";
+import type { Content } from "~/lib/content";
 
-export function ProjectGlyph({ slug, size = 44 }: { slug: string; size?: number }) {
-  const a = PROJECT_ACCENT[slug] ?? { icon: "box" as const, color: "var(--ds-gray-700)" };
+export function ProjectGlyph({
+  icon,
+  color,
+  size = 44,
+}: {
+  icon: IconName;
+  color: string;
+  size?: number;
+}) {
   return (
     <span
       style={{
         width: size,
         height: size,
-        borderRadius: 11,
+        borderRadius: Math.max(8, Math.round(size * 0.25)),
         flex: "none",
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        background: a.color,
+        background: accentVar(color, 700),
         color: "#fff",
       }}
     >
-      <Icon name={a.icon} size={size * 0.5} />
+      <Icon name={icon} size={size * 0.5} />
     </span>
   );
 }
@@ -29,8 +39,8 @@ export function ProjectCard({
   onOpen,
   t,
 }: {
-  p: Project;
-  onOpen: (p: Project) => void;
+  p: ProjectView;
+  onOpen: (p: ProjectView) => void;
   t: Content;
 }) {
   return (
@@ -44,7 +54,7 @@ export function ProjectCard({
       }}
     >
       <div className="pcard__top">
-        <ProjectGlyph slug={p.slug} />
+        <ProjectGlyph icon={p.icon} color={p.color} />
         <Badge color={p.status.color} size="small" dot>
           {p.status.label}
         </Badge>
@@ -53,9 +63,7 @@ export function ProjectCard({
       <p>{p.short}</p>
       <div className="pcard__stack">
         {p.stack.slice(0, 4).map((s) => (
-          <span key={s} className="chip">
-            {s}
-          </span>
+          <StackChip key={s} label={s} />
         ))}
       </div>
       <div className="pcard__foot">
@@ -72,13 +80,13 @@ export function ProjectRow({
   onOpen,
   t,
 }: {
-  p: Project;
-  onOpen: (p: Project) => void;
+  p: ProjectView;
+  onOpen: (p: ProjectView) => void;
   t: Content;
 }) {
   return (
     <button type="button" className="prow" onClick={() => onOpen(p)}>
-      <ProjectGlyph slug={p.slug} size={40} />
+      <ProjectGlyph icon={p.icon} color={p.color} size={40} />
       <div className="prow__body">
         <div className="prow__head">
           <h3>{p.name}</h3>
@@ -89,9 +97,7 @@ export function ProjectRow({
         <p>{p.short}</p>
         <div className="pcard__stack">
           {p.stack.slice(0, 5).map((s) => (
-            <span key={s} className="chip">
-              {s}
-            </span>
+            <StackChip key={s} label={s} />
           ))}
         </div>
       </div>

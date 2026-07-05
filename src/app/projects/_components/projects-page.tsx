@@ -1,17 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 
-import { Icon } from "~/components/geist";
+import { Icon, Note } from "~/components/geist";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectCard, ProjectRow } from "~/components/site/project-bits";
 import { ProjectDrawer } from "~/components/site/project-drawer";
-import type { Project } from "~/lib/content";
+import { accentVar, resolveNiche, resolveProject, type ProjectView } from "~/lib/catalog";
+import type { RouterOutputs } from "~/trpc/react";
 
-export function ProjectsPage() {
-  const { t } = usePrefs();
+export function ProjectsPage({
+  projects,
+  niches,
+}: {
+  projects: RouterOutputs["catalog"]["projects"];
+  niches: RouterOutputs["catalog"]["niches"];
+}) {
+  const { t, lang } = usePrefs();
   const [layout, setLayout] = useState<"rows" | "grid">("rows");
-  const [active, setActive] = useState<Project | null>(null);
+  const [filter, setFilter] = useState<string | null>(null);
+  const [active, setActive] = useState<ProjectView | null>(null);
+
+  const filtered = projects
+    .filter((p) => filter == null || p.niche?.slug === filter)
+    .map((p) => resolveProject(p, lang));
 
   return (
     <div className="wrap page-pad">
@@ -40,15 +52,45 @@ export function ProjectsPage() {
           </button>
         </div>
       </div>
-      {layout === "grid" ? (
+
+      {niches.length > 0 && (
+        <div className="filters">
+          <button
+            type="button"
+            className={"filter" + (filter == null ? " on" : "")}
+            onClick={() => setFilter(null)}
+          >
+            {t.projects.filterAll}
+          </button>
+          {niches.map((n) => {
+            const v = resolveNiche(n, lang);
+            return (
+              <button
+                key={n.id}
+                type="button"
+                className={"filter" + (filter === n.slug ? " on" : "")}
+                style={{ "--fc": accentVar(v.color, 700) } as CSSProperties}
+                onClick={() => setFilter(filter === n.slug ? null : n.slug)}
+              >
+                <span className="filter__dot" aria-hidden="true" />
+                {v.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <Note type="default">{t.projects.empty}</Note>
+      ) : layout === "grid" ? (
         <div className="pgrid">
-          {t.projectData.map((p) => (
+          {filtered.map((p) => (
             <ProjectCard key={p.slug} p={p} onOpen={setActive} t={t} />
           ))}
         </div>
       ) : (
         <div className="prows">
-          {t.projectData.map((p) => (
+          {filtered.map((p) => (
             <ProjectRow key={p.slug} p={p} onOpen={setActive} t={t} />
           ))}
         </div>

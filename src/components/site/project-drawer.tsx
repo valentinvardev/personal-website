@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 
 import { Badge, Button, Icon } from "~/components/geist";
-import type { Content, Project } from "~/lib/content";
+import { StackChip } from "~/components/geist/tech-icon";
+import type { ProjectView } from "~/lib/catalog";
+import type { Content } from "~/lib/content";
 import { ButtonLink } from "./button-link";
 import { PreviewModal } from "./preview-modal";
 import { ProjectGlyph } from "./project-bits";
@@ -13,7 +15,7 @@ export function ProjectDrawer({
   t,
   onClose,
 }: {
-  p: Project;
+  p: ProjectView;
   t: Content;
   onClose: () => void;
 }) {
@@ -38,7 +40,7 @@ export function ProjectDrawer({
           ✕
         </button>
         <div className="drawer__head">
-          <ProjectGlyph slug={p.slug} size={56} />
+          <ProjectGlyph icon={p.icon} color={p.color} size={56} />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h2>{p.name}</h2>
@@ -49,54 +51,55 @@ export function ProjectDrawer({
             <div className="drawer__role">{p.role}</div>
           </div>
         </div>
-        <p className="drawer__lead">{p.long}</p>
-        <h4 className="drawer__h">{t.projects.highlights}</h4>
-        <ul className="drawer__list">
-          {p.features.map((f) => (
-            <li key={f}>
-              <Icon name="circle-dot" size={15} color="var(--ds-gray-700)" />
-              <span>{f}</span>
-            </li>
-          ))}
-        </ul>
-        <h4 className="drawer__h">{t.projects.stackLabel}</h4>
-        <div className="pcard__stack">
-          {p.stack.map((s) => (
-            <span key={s} className="chip chip--lg">
-              {s}
-            </span>
-          ))}
-        </div>
+        <p className="drawer__lead">{p.long || p.short}</p>
+        {p.features.length > 0 && (
+          <>
+            <h4 className="drawer__h">{t.projects.highlights}</h4>
+            <ul className="drawer__list">
+              {p.features.map((f) => (
+                <li key={f}>
+                  <Icon name="circle-dot" size={15} color="var(--ds-gray-700)" />
+                  <span>{f}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+        {p.stack.length > 0 && (
+          <>
+            <h4 className="drawer__h">{t.projects.stackLabel}</h4>
+            <div className="pcard__stack">
+              {p.stack.map((s) => (
+                <StackChip key={s} label={s} large />
+              ))}
+            </div>
+          </>
+        )}
         <div className="drawer__actions">
-          {p.links.map((l) =>
-            l.primary ? (
-              // El botón primario ("Ver sitio") abre el modal de capturas.
-              <Button
-                key={l.label}
-                variant="primary"
-                prefix={<Icon name={l.icon} size={16} />}
-                onClick={() => setPreview(true)}
-              >
-                {l.label}
-              </Button>
-            ) : l.href ? (
-              <ButtonLink
-                key={l.label}
-                href={l.href}
-                variant="secondary"
-                prefix={<Icon name={l.icon} size={16} />}
-              >
-                {l.label}
-              </ButtonLink>
-            ) : (
-              <Button
-                key={l.label}
-                variant="secondary"
-                prefix={<Icon name={l.icon} size={16} />}
-              >
-                {l.label}
-              </Button>
-            ),
+          <Button
+            variant="primary"
+            prefix={<Icon name="globe" size={16} />}
+            onClick={() => setPreview(true)}
+          >
+            {t.projects.viewSite}
+          </Button>
+          {p.liveUrl && (
+            <ButtonLink
+              href={p.liveUrl}
+              variant="secondary"
+              prefix={<Icon name="external-link" size={16} />}
+            >
+              {t.projects.openLive}
+            </ButtonLink>
+          )}
+          {p.repoUrl && (
+            <ButtonLink
+              href={p.repoUrl}
+              variant="secondary"
+              prefix={<Icon name="github" size={16} />}
+            >
+              {t.projects.code}
+            </ButtonLink>
           )}
         </div>
       </aside>

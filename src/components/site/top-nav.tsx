@@ -24,6 +24,7 @@ export function TopNav() {
   const links: [string, string][] = [
     ["/", t.nav.home],
     ["/projects", t.nav.projects],
+    ["/niches", t.nav.niches],
     ["/about", t.nav.about],
     ["/contact", t.nav.contact],
   ];

@@ -26,7 +26,7 @@ model ContactMessage {
 }
 
 // Captura de página completa de un proyecto, mostrada como tab en el modal
-// de preview ("Ver sitio"). projectSlug referencia los slugs de content.ts.
+// de preview ("Ver sitio"). projectSlug referencia Project.slug.
 model ProjectSection {
     id          Int      @id @default(autoincrement())
     projectSlug String
@@ -37,4 +37,81 @@ model ProjectSection {
     createdAt   DateTime @default(now())
 
     @@index([projectSlug, sortOrder])
+}
+
+// Nicho: vertical de trabajo (fotografía deportiva, e-commerce, IA…).
+// Los campos *En son opcionales; el frontend cae al español si faltan.
+model Niche {
+    id        Int      @id @default(autoincrement())
+    slug      String   @unique
+    name      String
+    nameEn    String?
+    tagline   String?
+    taglineEn String?
+    icon      String   @default("box") // IconName del set Geist/Lucide
+    color     String   @default("blue") // escala de acento Geist
+    sortOrder Int      @default(0)
+    createdAt DateTime @default(now())
+
+    projects Project[]
+    blocks   ContentBlock[]
+}
+
+// Proyecto del portfolio, gestionado desde /admin.
+model Project {
+    id            Int      @id @default(autoincrement())
+    slug          String   @unique
+    name          String
+    icon          String   @default("box")
+    color         String   @default("blue")
+    role          String?
+    roleEn        String?
+    statusColor   String   @default("gray") // color del Badge
+    statusLabel   String   @default("Activo")
+    statusLabelEn String?
+    short         String
+    shortEn       String?
+    long          String?
+    longEn        String?
+    stack         String[]
+    features      String[]
+    featuresEn    String[]
+    liveUrl       String?
+    repoUrl       String?
+    featured      Boolean  @default(false)
+    sortOrder     Int      @default(0)
+    createdAt     DateTime @default(now())
+
+    nicheId Int?
+    niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: SetNull)
+
+    blocks ContentBlock[]
+
+    @@index([nicheId, sortOrder])
+    @@index([featured, sortOrder])
+}
+
+// Tarjeta dinámica de contenido ("material"): nota de texto o imagen,
+// mostrada en la grilla bento de la página del nicho. span controla el
+// ancho de la tarjeta en la grilla (sm | md | lg).
+model ContentBlock {
+    id        Int      @id @default(autoincrement())
+    kind      String // "text" | "image"
+    title     String?
+    titleEn   String?
+    body      String?
+    bodyEn    String?
+    imageUrl  String?
+    span      String   @default("md")
+    sortOrder Int      @default(0)
+    createdAt DateTime @default(now())
+
+    nicheId Int?
+    niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+
+    projectId Int?
+    project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+    @@index([nicheId, sortOrder])
+    @@index([projectId, sortOrder])
 }

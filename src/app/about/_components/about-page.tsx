@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar } from "~/components/geist";
+import { StackChip } from "~/components/geist/tech-icon";
 import { usePrefs } from "~/components/site/prefs";
 import { SectionHead } from "~/components/site/section-head";
 
@@ -50,9 +51,7 @@ export function AboutPage() {
               <h4>{g.label}</h4>
               <div className="pcard__stack">
                 {g.items.map((s) => (
-                  <span key={s} className="chip chip--lg">
-                    {s}
-                  </span>
+                  <StackChip key={s} label={s} large />
                 ))}
               </div>
             </div>

@@ -4,16 +4,25 @@ import { useState } from "react";
 
 import { Badge, Icon } from "~/components/geist";
 import { ButtonLink } from "~/components/site/button-link";
+import { NicheCard } from "~/components/site/niche-card";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectRow } from "~/components/site/project-bits";
 import { ProjectDrawer } from "~/components/site/project-drawer";
+import { Reveal } from "~/components/site/reveal";
 import { SectionHead } from "~/components/site/section-head";
-import type { Project } from "~/lib/content";
+import { resolveProject, type ProjectView } from "~/lib/catalog";
+import type { RouterOutputs } from "~/trpc/react";
 
-export function HomePage() {
-  const { t } = usePrefs();
-  const [active, setActive] = useState<Project | null>(null);
-  const featured = t.projectData.slice(0, 3);
+export function HomePage({
+  projects,
+  niches,
+}: {
+  projects: RouterOutputs["catalog"]["featuredProjects"];
+  niches: RouterOutputs["catalog"]["niches"];
+}) {
+  const { t, lang } = usePrefs();
+  const [active, setActive] = useState<ProjectView | null>(null);
+  const featured = projects.slice(0, 3).map((p) => resolveProject(p, lang));
 
   return (
     <div>
@@ -52,6 +61,29 @@ export function HomePage() {
       </header>
 
       <div className="wrap">
+        {/* ---- Nichos: el estante de dossiers ---- */}
+        {niches.length > 0 && (
+          <section className="section">
+            <div className="section__bar">
+              <SectionHead
+                eyebrow={t.niches.eyebrow}
+                title={t.niches.title}
+                sub={t.niches.homeSub}
+              />
+              <ButtonLink href="/niches" variant="secondary" size="small">
+                {t.niches.all}
+              </ButtonLink>
+            </div>
+            <div className="ngrid ngrid--home">
+              {niches.map((n, i) => (
+                <Reveal key={n.id} index={i}>
+                  <NicheCard n={n} />
+                </Reveal>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* ---- Servicios ---- */}
         <section className="section">
           <SectionHead eyebrow={t.services.eyebrow} title={t.services.title} sub={t.services.sub} />
@@ -69,19 +101,21 @@ export function HomePage() {
         </section>
 
         {/* ---- Proyectos destacados ---- */}
-        <section className="section">
-          <div className="section__bar">
-            <SectionHead eyebrow={t.projects.eyebrow} title={t.projects.title} />
-            <ButtonLink href="/projects" variant="secondary" size="small">
-              {t.projects.all}
-            </ButtonLink>
-          </div>
-          <div className="prows">
-            {featured.map((p) => (
-              <ProjectRow key={p.slug} p={p} onOpen={setActive} t={t} />
-            ))}
-          </div>
-        </section>
+        {featured.length > 0 && (
+          <section className="section">
+            <div className="section__bar">
+              <SectionHead eyebrow={t.projects.eyebrow} title={t.projects.title} />
+              <ButtonLink href="/projects" variant="secondary" size="small">
+                {t.projects.all}
+              </ButtonLink>
+            </div>
+            <div className="prows">
+              {featured.map((p) => (
+                <ProjectRow key={p.slug} p={p} onOpen={setActive} t={t} />
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ---- Escritos ---- */}
         <section className="section">
