@@ -615,6 +615,9 @@ h1, h2, h3, h4 { margin: 0; }
 .cta-band h2 { font: var(--ds-heading-40); letter-spacing: var(--ds-tracking-40); }
 .cta-band p { font: var(--ds-copy-16); opacity: .7; margin: 12px auto 28px; max-width: 460px; }
 .cta-band__row { display: flex; justify-content: center; }
+/* La banda invierte la superficie: el hover translúcido del botón
+   secundario lo camuflaba con el fondo. Acá el hover queda sólido. */
+.cta-band .geist-btn[data-variant="secondary"]:hover:not(:disabled) { background: var(--ds-gray-100); }
 
 /* ---------- FOOTER ---------- */
 .footer { border-top: 1px solid var(--ds-gray-alpha-300); background: var(--ds-background-200); }
