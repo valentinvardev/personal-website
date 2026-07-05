@@ -9,10 +9,58 @@ import { ButtonLink } from "./button-link";
 import { Monogram } from "./monogram";
 import { usePrefs } from "./prefs";
 
+/* Icono hamburguesa (estilo Lucide, no está en el set generado). */
+function BurgerIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="18" y2="18" />
+    </svg>
+  );
+}
+
+/** Toggle de tema + idioma (header en desktop, sidebar en mobile). */
+function PrefControls() {
+  const { theme, setTheme, lang, setLang } = usePrefs();
+  return (
+    <div className="ctrl">
+      <button
+        type="button"
+        className="ctrl__btn"
+        title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      >
+        <Icon name={theme === "dark" ? "moon" : "sun"} size={16} color="var(--ds-gray-900)" />
+      </button>
+      <button
+        type="button"
+        className="ctrl__lang"
+        title="Idioma"
+        onClick={() => setLang(lang === "es" ? "en" : "es")}
+      >
+        <Icon name="languages" size={15} color="var(--ds-gray-900)" />
+        <span>{lang.toUpperCase()}</span>
+      </button>
+    </div>
+  );
+}
+
 export function TopNav() {
-  const { theme, setTheme, lang, setLang, t } = usePrefs();
+  const { t } = usePrefs();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8);
@@ -20,6 +68,25 @@ export function TopNav() {
     on();
     return () => window.removeEventListener("scroll", on);
   }, []);
+
+  // Al navegar se cierra el sidebar.
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Con el sidebar abierto: ESC cierra y el body no scrollea.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   const links: [string, string][] = [
     ["/", t.nav.home],
@@ -31,48 +98,87 @@ export function TopNav() {
   ];
 
   return (
-    <nav className={"nav" + (scrolled ? " nav--scrolled" : "")}>
-      <div className="nav__inner">
-        <Link href="/" className="brand">
-          <Monogram />
-          <span className="brand__name">Valentín Varela</span>
-        </Link>
-        <div className="nav__links">
-          {links.map(([href, label]) => (
-            <Link
-              key={href}
-              href={href}
-              className={"nav__link" + (pathname === href ? " is-active" : "")}
-            >
-              {label}
-            </Link>
-          ))}
-        </div>
-        <div className="nav__right">
-          <div className="ctrl">
+    <>
+      <nav className={"nav" + (scrolled ? " nav--scrolled" : "")}>
+        <div className="nav__inner">
+          <Link href="/" className="brand">
+            <Monogram />
+            <span className="brand__name">Valentín Varela</span>
+          </Link>
+          <div className="nav__links">
+            {links.map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className={"nav__link" + (pathname === href ? " is-active" : "")}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+          <div className="nav__right">
+            <PrefControls />
+            <ButtonLink href="/contact" size="small" variant="primary">
+              {t.nav.cta}
+            </ButtonLink>
             <button
               type="button"
-              className="ctrl__btn"
-              title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="nav__burger"
+              aria-label="Abrir menú"
+              aria-expanded={open}
+              onClick={() => setOpen(true)}
             >
-              <Icon name={theme === "dark" ? "moon" : "sun"} size={16} color="var(--ds-gray-900)" />
-            </button>
-            <button
-              type="button"
-              className="ctrl__lang"
-              title="Idioma"
-              onClick={() => setLang(lang === "es" ? "en" : "es")}
-            >
-              <Icon name="languages" size={15} color="var(--ds-gray-900)" />
-              <span>{lang.toUpperCase()}</span>
+              <BurgerIcon />
             </button>
           </div>
-          <ButtonLink href="/contact" size="small" variant="primary">
-            {t.nav.cta}
-          </ButtonLink>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {open && (
+        <div className="mnav-scrim" onClick={() => setOpen(false)}>
+          <aside
+            className="mnav"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mnav__head">
+              <Link href="/" className="brand" onClick={() => setOpen(false)}>
+                <Monogram size={28} />
+                <span className="mnav__name">Valentín Varela</span>
+              </Link>
+              <button
+                type="button"
+                className="mnav__close"
+                aria-label="Cerrar menú"
+                onClick={() => setOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mnav__links">
+              {links.map(([href, label]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className={"mnav__link" + (pathname === href ? " is-active" : "")}
+                  onClick={() => setOpen(false)}
+                >
+                  {label}
+                  <Icon name="arrow-right" size={15} color="var(--ds-gray-700)" />
+                </Link>
+              ))}
+            </div>
+            <div className="mnav__foot">
+              <PrefControls />
+              <ButtonLink href="/contact" variant="primary" fullWidth>
+                {t.nav.cta}
+              </ButtonLink>
+            </div>
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
