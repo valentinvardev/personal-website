@@ -4,9 +4,10 @@ import { HomePage } from "./_components/home-page";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [projects, niches] = await Promise.all([
+  const [projects, niches, posts] = await Promise.all([
     api.catalog.featuredProjects(),
     api.catalog.niches(),
+    api.posts.latest(),
   ]);
-  return <HomePage projects={projects} niches={niches} />;
+  return <HomePage projects={projects} niches={niches} posts={posts} />;
 }

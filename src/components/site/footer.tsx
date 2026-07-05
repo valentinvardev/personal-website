@@ -13,6 +13,7 @@ export function Footer() {
     ["/", t.nav.home],
     ["/projects", t.nav.projects],
     ["/niches", t.nav.niches],
+    ["/writing", t.nav.writing],
     ["/about", t.nav.about],
     ["/contact", t.nav.contact],
   ];

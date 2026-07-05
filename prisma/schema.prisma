@@ -91,6 +91,39 @@ model Project {
     @@index([featured, sortOrder])
 }
 
+// Publicación del feed de escritos (/writing). Solo escribe el admin;
+// el visitante es lector. El contenido es monolingüe (la voz del autor).
+model Post {
+    id        Int      @id @default(autoincrement())
+    title     String?
+    body      String
+    category  String?
+    pinned    Boolean  @default(false)
+    published Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    attachments PostAttachment[]
+
+    @@index([published, pinned, createdAt])
+}
+
+// Adjunto de un post: imagen (galería) o archivo descargable (recurso).
+model PostAttachment {
+    id        Int     @id @default(autoincrement())
+    kind      String // "image" | "file"
+    url       String
+    name      String
+    mime      String?
+    size      Int?
+    sortOrder Int     @default(0)
+
+    postId Int
+    post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+    @@index([postId, sortOrder])
+}
+
 // Tarjeta dinámica de contenido ("material"): nota de texto o imagen,
 // mostrada en la grilla bento de la página del nicho. span controla el
 // ancho de la tarjeta en la grilla (sm | md | lg).

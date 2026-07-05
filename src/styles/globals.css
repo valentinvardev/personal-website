@@ -756,6 +756,103 @@ h1, h2, h3, h4 { margin: 0; }
 .bento__caption { padding: 12px 16px; border-top: 1px solid var(--ds-gray-alpha-300);
   font: var(--ds-label-13); color: var(--ds-gray-900); background: var(--ds-background-100); }
 
+/* ---------- ESCRITOS: fondo ambient (lighting + grain) ----------
+   Luces radiales muy suaves de la paleta Geist derivando lento, con una
+   capa de grano SVG encima: la textura "grainy glass" del feed. */
+.writing { position: relative; z-index: 0; min-height: 70vh; }
+.ambient { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.ambient__glow { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; }
+.ambient__glow--a { width: 560px; height: 560px; top: -12%; left: 6%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-blue-700) 16%, transparent), transparent 70%);
+  animation: drift-a 26s ease-in-out infinite alternate; }
+.ambient__glow--b { width: 480px; height: 480px; top: 28%; right: -8%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-purple-700) 11%, transparent), transparent 70%);
+  animation: drift-b 32s ease-in-out infinite alternate; }
+.ambient__glow--c { width: 520px; height: 520px; bottom: -14%; left: 32%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ds-teal-700) 10%, transparent), transparent 70%);
+  animation: drift-c 38s ease-in-out infinite alternate; }
+@keyframes drift-a { to { transform: translate(60px, 40px); } }
+@keyframes drift-b { to { transform: translate(-50px, 60px); } }
+@keyframes drift-c { to { transform: translate(40px, -50px); } }
+.ambient__grain { position: absolute; inset: 0; opacity: .5; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
+  background-size: 180px 180px; }
+[data-theme="dark"] .ambient__grain { opacity: .35; }
+@media (prefers-reduced-motion: reduce) { .ambient__glow { animation: none; } }
+
+/* ---------- ESCRITOS: feed ---------- */
+.page-head--center { justify-content: center; text-align: center; }
+.page-head--center .lead { margin-inline: auto; }
+.feed { max-width: 660px; margin: 8px auto 40px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Tarjeta de post: vidrio esmerilado sobre el ambient */
+.wpost { border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-md);
+  padding: 18px 20px; box-shadow: var(--ds-shadow-card);
+  background: color-mix(in srgb, var(--ds-background-100) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+.wpost__head { display: flex; align-items: center; gap: 12px; }
+.wpost__who { flex: 1; min-width: 0; }
+.wpost__name { display: flex; align-items: center; gap: 10px; font: var(--ds-heading-14); letter-spacing: var(--ds-tracking-14); color: var(--ds-gray-1000); }
+.wpost__pin { display: inline-flex; align-items: center; gap: 4px; font: var(--ds-label-12-mono); color: var(--ds-blue-900); }
+.wpost__meta { display: flex; align-items: center; gap: 6px; font: var(--ds-copy-13); color: var(--ds-gray-700); }
+.wpost__title { font: var(--ds-heading-20); letter-spacing: var(--ds-tracking-20); margin: 14px 0 0; }
+.wpost__body { margin-top: 10px; }
+.wpost__body p { font: var(--ds-copy-16); color: var(--ds-gray-1000); margin: 0 0 12px; white-space: pre-line; }
+.wpost__body p:last-child { margin-bottom: 0; }
+.wpost__more { appearance: none; background: none; border: none; padding: 0; cursor: pointer;
+  margin-top: 8px; font: var(--ds-button-14); color: var(--ds-text-link); }
+.wpost__more:hover { text-decoration: underline; }
+.wpost__gallery { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.wpost__gallery.single { grid-template-columns: 1fr; }
+.wpost__gallery a { display: block; overflow: hidden; border-radius: var(--ds-radius-sm); border: 1px solid var(--ds-gray-alpha-300); }
+.wpost__gallery img { width: 100%; height: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block;
+  transition: transform .3s var(--ds-ease); }
+.wpost__gallery.single img { aspect-ratio: auto; max-height: 520px; }
+.wpost__gallery a:hover img { transform: scale(1.015); }
+.wpost__files { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; }
+.wpost__files-label { font: var(--ds-label-12-mono); text-transform: uppercase; letter-spacing: .08em; color: var(--ds-gray-700); margin-bottom: 2px; }
+.wfile { display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border: 1px solid var(--ds-gray-alpha-300); border-radius: var(--ds-radius-sm);
+  background: color-mix(in srgb, var(--ds-background-200) 60%, transparent); }
+.wfile:hover { border-color: var(--ds-gray-alpha-500); background: var(--ds-gray-alpha-100); }
+.wfile__ic { width: 30px; height: 30px; border-radius: 6px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--ds-gray-100); color: var(--ds-gray-1000); }
+.wfile__name { flex: 1; min-width: 0; font: var(--ds-label-14); color: var(--ds-gray-1000); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wfile__size { font: var(--ds-label-12-mono); color: var(--ds-gray-700); flex: none; }
+
+/* ---------- ESCRITOS: composer del admin ---------- */
+.composer { border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-md);
+  padding: 16px 18px; background: var(--ds-background-100); box-shadow: var(--ds-shadow-card); }
+.composer__head { display: flex; gap: 12px; align-items: flex-start; }
+.composer__fields { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.composer__title { border: none; outline: none; background: transparent; width: 100%;
+  font: var(--ds-heading-16); letter-spacing: var(--ds-tracking-16); color: var(--ds-gray-1000); padding: 6px 0; }
+.composer__title::placeholder { color: var(--ds-gray-700); font-weight: 600; }
+.composer .geist-ta { border: none; background: transparent; padding: 4px 0; min-height: 64px; font: var(--ds-copy-16); }
+.composer .geist-ta:focus { box-shadow: none; }
+.composer__bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ds-gray-alpha-300); }
+.composer__tools { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.composer__opts { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.composer__cat { border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-full);
+  background: transparent; outline: none; height: 30px; padding: 0 12px; width: 130px;
+  font: var(--ds-label-13); color: var(--ds-gray-1000); }
+.composer__cat:focus { border-color: var(--ds-gray-alpha-500); box-shadow: var(--ds-ring); }
+.att-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.att-thumb { position: relative; width: 84px; height: 84px; border-radius: var(--ds-radius-sm);
+  overflow: hidden; border: 1px solid var(--ds-gray-alpha-300); }
+.att-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.att-thumb button { position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; border-radius: 50%;
+  border: none; cursor: pointer; background: var(--ds-gray-alpha-900); color: #fff; font-size: 11px; line-height: 1; }
+.att-files { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.att-file { display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border: 1px solid var(--ds-gray-alpha-300); border-radius: var(--ds-radius-sm);
+  font: var(--ds-label-13); color: var(--ds-gray-1000); background: var(--ds-background-200); }
+.att-file__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-file__size { font: var(--ds-label-12-mono); color: var(--ds-gray-700); }
+.att-file button { border: none; background: none; cursor: pointer; color: var(--ds-gray-700); padding: 2px 4px; }
+.att-file button:hover { color: var(--ds-red-800); }
+
 /* ---------- MODAL DE PREVIEW (Ver sitio) ---------- */
 .pv-scrim { position: fixed; inset: 0; z-index: 70; background: var(--ds-gray-alpha-700); display: flex; align-items: center; justify-content: center; padding: 24px; }
 .pv { width: min(960px, 100%); height: min(84vh, 900px); background: var(--ds-background-100); border: 1px solid var(--ds-gray-alpha-400);

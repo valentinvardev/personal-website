@@ -20,6 +20,7 @@ export interface Content {
     home: string;
     projects: string;
     niches: string;
+    writing: string;
     about: string;
     contact: string;
     cta: string;
@@ -69,7 +70,13 @@ export interface Content {
   writing: {
     eyebrow: string;
     title: string;
-    posts: { date: string; cat: string; title: string }[];
+    pageLead: string;
+    empty: string;
+    readMore: string;
+    readLess: string;
+    pinned: string;
+    filesLabel: string;
+    all: string;
   };
   cta: { title: string; sub: string; button: string };
   about: { eyebrow: string; title: string; bio: string[] };
@@ -145,6 +152,7 @@ const es: Content = {
     home: "Inicio",
     projects: "Proyectos",
     niches: "Nichos",
+    writing: "Escritos",
     about: "Sobre mí",
     contact: "Contacto",
     cta: "Trabajemos juntos",
@@ -203,11 +211,13 @@ const es: Content = {
   writing: {
     eyebrow: "Escritos",
     title: "Notas y aprendizajes",
-    posts: [
-      { date: "Jun 2026", cat: "Ingeniería", title: "Cómo indexé miles de fotos para búsqueda facial en tiempo real" },
-      { date: "May 2026", cat: "Producto", title: "Pagos con MercadoPago: lo que aprendí construyendo checkouts" },
-      { date: "Abr 2026", cat: "Diseño", title: "Por qué elijo sistemas de diseño minimalistas" },
-    ],
+    pageLead: "Apuntes en tiempo real: lo que estoy construyendo, decisiones que tomé y lo que voy aprendiendo en el camino.",
+    empty: "Todavía no hay publicaciones.",
+    readMore: "Leer más",
+    readLess: "Mostrar menos",
+    pinned: "Fijado",
+    filesLabel: "Recursos",
+    all: "Ver todos",
   },
   cta: {
     title: "¿Tenés una idea en mente?",
@@ -291,6 +301,7 @@ const en: Content = {
     home: "Home",
     projects: "Projects",
     niches: "Niches",
+    writing: "Writing",
     about: "About",
     contact: "Contact",
     cta: "Let's work together",
@@ -349,11 +360,13 @@ const en: Content = {
   writing: {
     eyebrow: "Writing",
     title: "Notes & learnings",
-    posts: [
-      { date: "Jun 2026", cat: "Engineering", title: "How I indexed thousands of photos for real-time facial search" },
-      { date: "May 2026", cat: "Product", title: "MercadoPago payments: what I learned building checkouts" },
-      { date: "Apr 2026", cat: "Design", title: "Why I choose minimal design systems" },
-    ],
+    pageLead: "Field notes in real time: what I'm building, decisions I made and what I keep learning along the way.",
+    empty: "No posts yet.",
+    readMore: "Read more",
+    readLess: "Show less",
+    pinned: "Pinned",
+    filesLabel: "Resources",
+    all: "View all",
   },
   cta: {
     title: "Got an idea in mind?",

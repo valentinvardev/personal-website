@@ -6,10 +6,11 @@ import { Button, Tabs } from "~/components/geist";
 import { logout } from "../actions";
 import { CapturesAdmin } from "./captures-admin";
 import { NichesAdmin } from "./niches-admin";
+import { PostsAdmin } from "./posts-admin";
 import { ProjectsAdmin } from "./projects-admin";
 
 export function AdminPanel() {
-  const [tab, setTab] = useState("projects");
+  const [tab, setTab] = useState("posts");
 
   return (
     <div className="wrap page-pad">
@@ -31,6 +32,7 @@ export function AdminPanel() {
 
       <Tabs
         items={[
+          { value: "posts", label: "Escritos" },
           { value: "projects", label: "Proyectos" },
           { value: "niches", label: "Nichos y material" },
           { value: "captures", label: "Capturas" },
@@ -39,6 +41,7 @@ export function AdminPanel() {
         onChange={setTab}
       />
 
+      {tab === "posts" && <PostsAdmin />}
       {tab === "projects" && <ProjectsAdmin />}
       {tab === "niches" && <NichesAdmin />}
       {tab === "captures" && <CapturesAdmin />}

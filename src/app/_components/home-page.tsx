@@ -10,15 +10,20 @@ import { ProjectRow } from "~/components/site/project-bits";
 import { ProjectDrawer } from "~/components/site/project-drawer";
 import { Reveal } from "~/components/site/reveal";
 import { SectionHead } from "~/components/site/section-head";
+import Link from "next/link";
+
 import { resolveProject, type ProjectView } from "~/lib/catalog";
+import { shortDate } from "~/lib/time";
 import type { RouterOutputs } from "~/trpc/react";
 
 export function HomePage({
   projects,
   niches,
+  posts,
 }: {
   projects: RouterOutputs["catalog"]["featuredProjects"];
   niches: RouterOutputs["catalog"]["niches"];
+  posts: RouterOutputs["posts"]["latest"];
 }) {
   const { t, lang } = usePrefs();
   const [active, setActive] = useState<ProjectView | null>(null);
@@ -117,24 +122,29 @@ export function HomePage({
           </section>
         )}
 
-        {/* ---- Escritos ---- */}
-        <section className="section">
-          <div className="section__bar">
-            <SectionHead eyebrow={t.writing.eyebrow} title={t.writing.title} />
-          </div>
-          <div className="post-list">
-            {t.writing.posts.map((p) => (
-              <a className="post" key={p.title} onClick={(e) => e.preventDefault()} href="#">
-                <div className="post__meta">
-                  <span>{p.date}</span>
-                  <span className="post__cat">{p.cat}</span>
-                </div>
-                <h3>{p.title}</h3>
-                <Icon name="arrow-up-right" size={16} color="var(--ds-gray-700)" />
-              </a>
-            ))}
-          </div>
-        </section>
+        {/* ---- Escritos (últimos posts del feed) ---- */}
+        {posts.length > 0 && (
+          <section className="section">
+            <div className="section__bar">
+              <SectionHead eyebrow={t.writing.eyebrow} title={t.writing.title} />
+              <ButtonLink href="/writing" variant="secondary" size="small">
+                {t.writing.all}
+              </ButtonLink>
+            </div>
+            <div className="post-list">
+              {posts.map((p) => (
+                <Link className="post" key={p.id} href="/writing">
+                  <div className="post__meta">
+                    <span suppressHydrationWarning>{shortDate(p.createdAt, lang)}</span>
+                    {p.category && <span className="post__cat">{p.category}</span>}
+                  </div>
+                  <h3>{p.title ?? (p.body.length > 90 ? p.body.slice(0, 90).trimEnd() + "…" : p.body)}</h3>
+                  <Icon name="arrow-up-right" size={16} color="var(--ds-gray-700)" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* ---- Banda CTA ---- */}
         <section className="cta-band">
