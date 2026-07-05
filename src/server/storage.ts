@@ -132,7 +132,7 @@ export function fileSignatureOk(ext: string, bytes: Uint8Array): boolean {
 }
 
 export async function uploadMedia(
-  folder: "screenshots" | "material" | "posts" | "files",
+  folder: "screenshots" | "material" | "posts" | "files" | "logos",
   fileName: string,
   contentType: string,
   bytes: Uint8Array,

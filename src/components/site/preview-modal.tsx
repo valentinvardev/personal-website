@@ -56,7 +56,7 @@ export function PreviewModal({ p, onClose }: { p: ProjectView; onClose: () => vo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="pv__head">
-          <ProjectGlyph icon={p.icon} color={p.color} size={36} />
+          <ProjectGlyph icon={p.icon} color={p.color} logoUrl={p.logoUrl} size={36} />
           <h2>{p.name}</h2>
           <button type="button" className="pv__close" onClick={onClose} aria-label="Cerrar">
             ✕

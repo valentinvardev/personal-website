@@ -42,6 +42,7 @@ export interface ProjectRecord {
   name: string;
   icon: string;
   color: string;
+  logoUrl: string | null;
   role: string | null;
   roleEn: string | null;
   statusColor: string;
@@ -94,6 +95,7 @@ export interface ProjectView {
   name: string;
   icon: IconName;
   color: Accent;
+  logoUrl: string | null;
   role: string;
   status: { color: BadgeColor; label: string };
   stack: string[];
@@ -145,6 +147,7 @@ export function resolveProject(row: ProjectRecord, lang: Lang): ProjectView {
     name: row.name,
     icon: asIcon(row.icon),
     color: asAccent(row.color),
+    logoUrl: row.logoUrl,
     role: pick(en, row.roleEn, row.role ?? ""),
     status: {
       color: asAccent(row.statusColor) as BadgeColor,

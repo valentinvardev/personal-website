@@ -40,7 +40,7 @@ export function ProjectDrawer({
           ✕
         </button>
         <div className="drawer__head">
-          <ProjectGlyph icon={p.icon} color={p.color} size={56} />
+          <ProjectGlyph icon={p.icon} color={p.color} logoUrl={p.logoUrl} size={56} />
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h2>{p.name}</h2>

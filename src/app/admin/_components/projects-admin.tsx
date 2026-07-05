@@ -6,6 +6,7 @@ import { Badge, Button, Input, Note, Spinner, Switch, Textarea } from "~/compone
 import { ProjectGlyph } from "~/components/site/project-bits";
 import { asAccent, asIcon } from "~/lib/catalog";
 import { api, type RouterOutputs } from "~/trpc/react";
+import { ImageUpload } from "./image-upload";
 import { AdminSelect, ColorPicker, FieldLabel, IconPicker } from "./pickers";
 
 type ProjectRow = RouterOutputs["catalog"]["projects"][number];
@@ -16,6 +17,7 @@ interface Draft {
   name: string;
   icon: string;
   color: string;
+  logoUrl: string;
   role: string;
   roleEn: string;
   statusColor: string;
@@ -40,6 +42,7 @@ const EMPTY: Draft = {
   name: "",
   icon: "box",
   color: "blue",
+  logoUrl: "",
   role: "",
   roleEn: "",
   statusColor: "green",
@@ -65,6 +68,7 @@ function toDraft(p: ProjectRow): Draft {
     name: p.name,
     icon: p.icon,
     color: p.color,
+    logoUrl: p.logoUrl ?? "",
     role: p.role ?? "",
     roleEn: p.roleEn ?? "",
     statusColor: p.statusColor,
@@ -96,6 +100,7 @@ function toInput(d: Draft) {
     name: d.name.trim(),
     icon: d.icon,
     color: asAccent(d.color),
+    logoUrl: d.logoUrl || undefined,
     role: d.role || undefined,
     roleEn: d.roleEn || undefined,
     statusColor: asAccent(d.statusColor),
@@ -152,7 +157,7 @@ export function ProjectsAdmin() {
             />
           ) : (
             <div key={p.id} className="adm-item">
-              <ProjectGlyph icon={asIcon(p.icon)} color={p.color} size={38} />
+              <ProjectGlyph icon={asIcon(p.icon)} color={p.color} logoUrl={p.logoUrl} size={38} />
               <div className="adm-item__body">
                 <div className="adm-item__head">
                   <strong>{p.name}</strong>
@@ -235,6 +240,14 @@ function ProjectEditor({
         <div>
           <FieldLabel>Icono</FieldLabel>
           <IconPicker value={d.icon} onChange={(icon) => set({ icon })} />
+        </div>
+        <div className="full">
+          <ImageUpload
+            value={d.logoUrl}
+            onChange={(logoUrl) => set({ logoUrl })}
+            folder="logos"
+            label="Logo del proyecto (opcional — reemplaza al icono y color)"
+          />
         </div>
         <div>
           <FieldLabel>Color</FieldLabel>

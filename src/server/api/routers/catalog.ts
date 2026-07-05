@@ -49,6 +49,7 @@ const projectInput = z.object({
   name: z.string().trim().min(1).max(120),
   icon: z.string().trim().min(1).max(50),
   color: accent,
+  logoUrl: optionalText(2000),
   role: optionalText(160),
   roleEn: optionalText(160),
   statusColor: accent,

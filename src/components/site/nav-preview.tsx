@@ -53,7 +53,7 @@ function ProjectsPanel() {
         const p = resolveProject(row, lang);
         return (
           <Link key={p.slug} href={`/projects?p=${p.slug}`} className="navp-row" role="menuitem">
-            <ProjectGlyph icon={p.icon} color={p.color} size={30} />
+            <ProjectGlyph icon={p.icon} color={p.color} logoUrl={p.logoUrl} size={30} />
             <span className="navp-row__body">
               <strong>{p.name}</strong>
               <span>{p.short}</span>

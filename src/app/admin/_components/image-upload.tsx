@@ -20,7 +20,7 @@ export function ImageUpload({
 }: {
   value: string;
   onChange: (url: string) => void;
-  folder: "screenshots" | "material";
+  folder: "screenshots" | "material" | "logos";
   label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);

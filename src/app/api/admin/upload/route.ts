@@ -14,7 +14,7 @@ import {
   uploadMedia,
 } from "~/server/storage";
 
-const FOLDERS = ["screenshots", "material", "posts", "files"] as const;
+const FOLDERS = ["screenshots", "material", "posts", "files", "logos"] as const;
 type Folder = (typeof FOLDERS)[number];
 
 /**
