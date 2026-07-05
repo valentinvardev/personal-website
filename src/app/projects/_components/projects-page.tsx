@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { Icon, Note } from "~/components/geist";
 import { usePrefs } from "~/components/site/prefs";
@@ -20,6 +21,17 @@ export function ProjectsPage({
   const [layout, setLayout] = useState<"rows" | "grid">("rows");
   const [filter, setFilter] = useState<string | null>(null);
   const [active, setActive] = useState<ProjectView | null>(null);
+
+  // Deep-link ?p=slug (desde el navigation menu): abre el drawer directo.
+  const search = useSearchParams();
+  const handledSlug = useRef<string | null>(null);
+  useEffect(() => {
+    const slug = search.get("p");
+    if (!slug || handledSlug.current === slug) return;
+    handledSlug.current = slug;
+    const row = projects.find((x) => x.slug === slug);
+    if (row) setActive(resolveProject(row, lang));
+  }, [search, projects, lang]);
 
   const filtered = projects
     .filter((p) => filter == null || p.niche?.slug === filter)
