@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "~/components/geist";
 import { ButtonLink } from "./button-link";
@@ -69,8 +69,37 @@ export function TopNav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [menu, setMenu] = useState<NavMenuKind | null>(null);
   const closeTimer = useRef<number | null>(null);
+  const sidebarTimer = useRef<number | null>(null);
+
+  const openSidebar = () => {
+    if (sidebarTimer.current) {
+      window.clearTimeout(sidebarTimer.current);
+      sidebarTimer.current = null;
+    }
+    setClosing(false);
+    setOpen(true);
+  };
+
+  /* Cierre animado: la clase .is-closing corre la animación de salida
+     y recién después se desmonta el sidebar. */
+  const closeSidebar = useCallback(() => {
+    setClosing(true);
+    if (sidebarTimer.current) window.clearTimeout(sidebarTimer.current);
+    sidebarTimer.current = window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+      sidebarTimer.current = null;
+    }, 200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (sidebarTimer.current) window.clearTimeout(sidebarTimer.current);
+    };
+  }, []);
 
   const openMenu = (m: NavMenuKind) => {
     if (closeTimer.current) {
@@ -92,9 +121,15 @@ export function TopNav() {
     return () => window.removeEventListener("scroll", on);
   }, []);
 
-  // Al navegar se cierran el sidebar y el navigation menu.
+  // Al navegar se cierran el sidebar (en seco, la página ya cambió)
+  // y el navigation menu.
   useEffect(() => {
+    if (sidebarTimer.current) {
+      window.clearTimeout(sidebarTimer.current);
+      sidebarTimer.current = null;
+    }
     setOpen(false);
+    setClosing(false);
     setMenu(null);
   }, [pathname]);
 
@@ -108,19 +143,32 @@ export function TopNav() {
     return () => window.removeEventListener("keydown", onKey);
   }, [menu]);
 
-  // Con el sidebar abierto: ESC cierra y el body no scrollea.
+  // Con el sidebar abierto: ESC cierra, el body no scrollea y si la
+  // ventana pasa a desktop (>900px) se cierra en seco.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") closeSidebar();
+    };
+    const onResize = () => {
+      if (window.innerWidth > 900) {
+        if (sidebarTimer.current) {
+          window.clearTimeout(sidebarTimer.current);
+          sidebarTimer.current = null;
+        }
+        setOpen(false);
+        setClosing(false);
+      }
     };
     window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onResize);
     document.body.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onResize);
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [open, closeSidebar]);
 
   const links: [string, string][] = [
     ["/", t.nav.home],
@@ -173,8 +221,8 @@ export function TopNav() {
               type="button"
               className="nav__burger"
               aria-label="Abrir menú"
-              aria-expanded={open}
-              onClick={() => setOpen(true)}
+              aria-expanded={open && !closing}
+              onClick={openSidebar}
             >
               <BurgerIcon />
             </button>
@@ -183,7 +231,10 @@ export function TopNav() {
       </nav>
 
       {open && (
-        <div className="mnav-scrim" onClick={() => setOpen(false)}>
+        <div
+          className={"mnav-scrim" + (closing ? " is-closing" : "")}
+          onClick={closeSidebar}
+        >
           <aside
             className="mnav"
             role="dialog"
@@ -192,14 +243,14 @@ export function TopNav() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mnav__head">
-              <Link href="/" className="brand" aria-label="Inicio" onClick={() => setOpen(false)}>
+              <Link href="/" className="brand" aria-label="Inicio" onClick={closeSidebar}>
                 <Logo height={22} />
               </Link>
               <button
                 type="button"
                 className="mnav__close"
                 aria-label="Cerrar menú"
-                onClick={() => setOpen(false)}
+                onClick={closeSidebar}
               >
                 ✕
               </button>
@@ -210,7 +261,7 @@ export function TopNav() {
                   key={href}
                   href={href}
                   className={"mnav__link" + (pathname === href ? " is-active" : "")}
-                  onClick={() => setOpen(false)}
+                  onClick={closeSidebar}
                 >
                   {label}
                   <Icon name="arrow-right" size={15} color="var(--ds-gray-700)" />
@@ -219,7 +270,7 @@ export function TopNav() {
             </div>
             <div className="mnav__foot">
               <PrefControls />
-              <ButtonLink href="/contact" variant="primary" fullWidth>
+              <ButtonLink href="/contact" variant="primary" fullWidth onClick={closeSidebar}>
                 {t.nav.cta}
               </ButtonLink>
             </div>

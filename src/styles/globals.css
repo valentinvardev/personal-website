@@ -548,7 +548,14 @@ h1, h2, h3, h4 { margin: 0; }
 }
 
 /* ---------- SIDEBAR MOBILE ---------- */
-.mnav-scrim { position: fixed; inset: 0; z-index: 80; background: var(--ds-gray-alpha-700); }
+.mnav-scrim { position: fixed; inset: 0; z-index: 80; background: var(--ds-gray-alpha-700);
+  animation: mnavFadeIn .2s var(--ds-ease); }
+@keyframes mnavFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.mnav-scrim.is-closing { animation: mnavFadeOut .2s var(--ds-ease) forwards; pointer-events: none; }
+@keyframes mnavFadeOut { to { opacity: 0; } }
+.mnav-scrim.is-closing .mnav { animation: mnavOut .2s var(--ds-ease) forwards; }
+@keyframes mnavOut { to { transform: translateX(32px); opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .mnav-scrim, .mnav-scrim.is-closing, .mnav-scrim.is-closing .mnav { animation: none; } .mnav-scrim.is-closing { opacity: 0; } }
 .mnav { position: absolute; top: 0; right: 0; bottom: 0; width: min(320px, 86vw);
   background: var(--ds-background-100); border-left: 1px solid var(--ds-gray-alpha-400);
   box-shadow: var(--ds-shadow-modal); display: flex; flex-direction: column;
