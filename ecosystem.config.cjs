@@ -7,13 +7,15 @@ module.exports = {
     {
       name: "valentinvarela",
       cwd: __dirname,
-      script: "npm",
-      args: "start",
+      // Binario de Next directo (sin npm en el medio) + fork explícito:
+      // pm2 en modo cluster no funciona bien con scripts npm.
+      script: "node_modules/next/dist/bin/next",
+      args: "start -p 3013",
+      exec_mode: "fork",
+      instances: 1,
       env: {
         NODE_ENV: "production",
-        PORT: "3013",
       },
-      instances: 1,
       autorestart: true,
       max_memory_restart: "512M",
       out_file: "logs/out.log",
