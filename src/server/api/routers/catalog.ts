@@ -157,8 +157,17 @@ export const catalogRouter = createTRPCRouter({
 
   updateProject: adminProcedure
     .input(projectInput.extend({ id: z.number().int() }))
-    .mutation(({ ctx, input: { id, ...data } }) => {
-      return ctx.db.project.update({ where: { id }, data });
+    .mutation(async ({ ctx, input: { id, ...data } }) => {
+      const prev = await ctx.db.project.findUnique({ where: { id }, select: { slug: true } });
+      const project = await ctx.db.project.update({ where: { id }, data });
+      // Si cambió el slug, migrar las capturas del modal (referencian por slug).
+      if (prev && prev.slug !== project.slug) {
+        await ctx.db.projectSection.updateMany({
+          where: { projectSlug: prev.slug },
+          data: { projectSlug: project.slug },
+        });
+      }
+      return project;
     }),
 
   deleteProject: adminProcedure

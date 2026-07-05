@@ -1,5 +1,7 @@
-// Seed idempotente: nichos, proyectos (los 4 originales de content.ts) y
-// tarjetas de material de ejemplo. Ejecutar con `npm run db:seed`.
+// Seed de arranque: nichos, proyectos y tarjetas de material iniciales.
+// SOLO corre sobre una base vacía — si ya hay contenido cargado desde
+// /admin, no toca nada (las ediciones del panel son la fuente de verdad).
+// Ejecutar con `npm run db:seed`.
 import { PrismaClient } from "../generated/prisma/index.js";
 
 const db = new PrismaClient();
@@ -141,6 +143,70 @@ const PROJECTS = [
     nicheSlug: "fotografia-eventos",
   },
   {
+    slug: "cuervito-app",
+    name: "cuervito.app",
+    icon: "store",
+    color: "red",
+    role: "Fundador · producto + ingeniería",
+    roleEn: "Founder · product + engineering",
+    statusColor: "blue",
+    statusLabel: "Activo",
+    statusLabelEn: "Active",
+    short: "Marketplace SaaS de reconocimiento facial: los fotógrafos venden sus fotos y la plataforma retiene el 10%.",
+    shortEn: "Facial-recognition SaaS marketplace: photographers sell their photos and the platform keeps 10%.",
+    long: "Marketplace donde los fotógrafos de eventos suben sus fotos y las venden directo a los asistentes, que encuentran las suyas con reconocimiento facial. Como dueño de la plataforma opero el negocio completo: cada venta deja una comisión del 10%.",
+    longEn: "A marketplace where event photographers upload their photos and sell them directly to attendees, who find theirs using facial recognition. As the platform owner I run the whole business: every sale leaves a 10% commission.",
+    stack: ["Next.js", "tRPC", "Prisma", "Supabase", "Face Recognition", "MercadoPago"],
+    features: [
+      "Reconocimiento facial para encontrar tus fotos",
+      "Los fotógrafos publican y venden sus galerías",
+      "Comisión de plataforma del 10% por venta",
+      "Pagos y liquidaciones a fotógrafos integrados",
+    ],
+    featuresEn: [
+      "Facial recognition to find your photos",
+      "Photographers publish and sell their galleries",
+      "10% platform fee per sale",
+      "Integrated payments and photographer payouts",
+    ],
+    liveUrl: "https://cuervito.app",
+    featured: false,
+    sortOrder: 4,
+    nicheSlug: "fotografia-eventos",
+  },
+  {
+    slug: "portapic",
+    name: "portapic.com",
+    icon: "layout-dashboard",
+    color: "green",
+    role: "Fundador · producto + full-stack",
+    roleEn: "Founder · product + full-stack",
+    statusColor: "blue",
+    statusLabel: "Activo",
+    statusLabelEn: "Active",
+    short: "Portfolios para fotógrafos en simples pasos: plantillas de autor, personalización completa y plan gratis.",
+    shortEn: "Portfolios for photographers in a few steps: designer templates, full customization and a free plan.",
+    long: "Plataforma para que cualquier fotógrafo arme su portfolio en simples pasos: elige entre varias plantillas con diseño de autor, personaliza todo a su gusto y publica gratis. El plan pago suma dominio propio y funcionalidades extra.",
+    longEn: "A platform for any photographer to build their portfolio in a few steps: pick from several designer templates, customize everything and publish for free. The paid plan adds a custom domain and extra features.",
+    stack: ["Next.js", "TypeScript", "Tailwind", "Prisma", "Supabase", "Vercel"],
+    features: [
+      "Portfolio publicado en simples pasos",
+      "Plantillas con diseño de autor",
+      "Personalización completa del sitio",
+      "Gratis para empezar; plan pago con dominio propio y extras",
+    ],
+    featuresEn: [
+      "Portfolio published in a few steps",
+      "Designer templates",
+      "Full site customization",
+      "Free to start; paid plan with custom domain and extras",
+    ],
+    liveUrl: "https://portapic.com",
+    featured: false,
+    sortOrder: 5,
+    nicheSlug: "fotografia-eventos",
+  },
+  {
     slug: "landing-page-generator",
     name: "Landing Page Generator",
     icon: "layers",
@@ -222,6 +288,14 @@ const BLOCKS = [
 ];
 
 async function main() {
+  const [nicheCount, projectCount] = await Promise.all([db.niche.count(), db.project.count()]);
+  if (nicheCount > 0 || projectCount > 0) {
+    console.log(
+      "La base ya tiene contenido — el seed solo corre sobre una base vacía para no pisar lo editado en /admin.",
+    );
+    return;
+  }
+
   const nicheIds = {};
   for (const n of NICHES) {
     const row = await db.niche.upsert({
