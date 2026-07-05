@@ -49,7 +49,7 @@ export interface Content {
     highlights: string;
     stackLabel: string;
     viewSite: string;
-    openLive: string;
+    captures: string;
     code: string;
     filterAll: string;
     empty: string;
@@ -190,7 +190,7 @@ const es: Content = {
     highlights: "Lo destacado",
     stackLabel: "Stack",
     viewSite: "Ver sitio",
-    openLive: "Abrir en vivo",
+    captures: "Ver capturas",
     code: "Código",
     filterAll: "Todos",
     empty: "Todavía no hay proyectos para mostrar.",
@@ -339,7 +339,7 @@ const en: Content = {
     highlights: "Highlights",
     stackLabel: "Stack",
     viewSite: "View site",
-    openLive: "Open live",
+    captures: "View screenshots",
     code: "Code",
     filterAll: "All",
     empty: "No projects to show yet.",

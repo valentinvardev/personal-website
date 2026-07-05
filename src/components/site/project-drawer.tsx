@@ -76,21 +76,34 @@ export function ProjectDrawer({
           </>
         )}
         <div className="drawer__actions">
-          <Button
-            variant="primary"
-            prefix={<Icon name="globe" size={16} />}
-            onClick={() => setPreview(true)}
-          >
-            {t.projects.viewSite}
-          </Button>
-          {p.liveUrl && (
+          {p.liveUrl ? (
+            // Con URL en vivo, "Ver sitio" abre la página real del cliente
+            // en una pestaña nueva; las capturas quedan como secundario.
             <ButtonLink
               href={p.liveUrl}
-              variant="secondary"
-              prefix={<Icon name="external-link" size={16} />}
+              variant="primary"
+              prefix={<Icon name="globe" size={16} />}
+              suffix={<Icon name="arrow-up-right" size={14} />}
             >
-              {t.projects.openLive}
+              {t.projects.viewSite}
             </ButtonLink>
+          ) : (
+            <Button
+              variant="primary"
+              prefix={<Icon name="globe" size={16} />}
+              onClick={() => setPreview(true)}
+            >
+              {t.projects.viewSite}
+            </Button>
+          )}
+          {p.liveUrl && (
+            <Button
+              variant="secondary"
+              prefix={<Icon name="camera" size={16} />}
+              onClick={() => setPreview(true)}
+            >
+              {t.projects.captures}
+            </Button>
           )}
           {p.repoUrl && (
             <ButtonLink
