@@ -124,7 +124,13 @@ export interface Content {
 }
 
 export const LINKS: SocialLink[] = [
-  { k: "whatsapp", icon: "whatsapp", label: "WhatsApp", handle: "+54 9 …", href: "https://wa.me/" },
+  {
+    k: "whatsapp",
+    icon: "whatsapp",
+    label: "WhatsApp",
+    handle: "+54 9 3541 57-8953",
+    href: "https://wa.me/5493541578953",
+  },
   {
     k: "linkedin",
     icon: "linkedin",

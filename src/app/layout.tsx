@@ -3,6 +3,7 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { Ambient } from "~/components/site/ambient";
 import { Footer } from "~/components/site/footer";
 import { PrefsProvider, THEME_INIT_SCRIPT } from "~/components/site/prefs";
 import { TopNav } from "~/components/site/top-nav";
@@ -37,6 +38,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body>
+        <Ambient />
         <TRPCReactProvider>
           <PrefsProvider>
             <TopNav />
