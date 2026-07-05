@@ -683,6 +683,15 @@ h1, h2, h3, h4 { margin: 0; }
 .clink span { font: var(--ds-copy-13); color: var(--ds-gray-700); }
 .cform { display: flex; flex-direction: column; gap: 16px; }
 @media (max-width: 760px) { .contact-grid { grid-template-columns: 1fr; } }
+/* Estado de éxito: sin caja de color — se funde con la tarjeta; el verde
+   vive solo en el icono (el color señala estado, no pinta superficies). */
+.csent { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 28px 8px; }
+.csent__ic { width: 44px; height: 44px; border-radius: var(--ds-radius-full); flex: none;
+  display: inline-flex; align-items: center; justify-content: center; margin-bottom: 8px;
+  background: var(--ds-gray-100); border: 1px solid var(--ds-gray-alpha-300); color: var(--ds-green-700); }
+.csent h3 { font: var(--ds-heading-20); letter-spacing: var(--ds-tracking-20); }
+.csent p { font: var(--ds-copy-14); color: var(--ds-gray-900); margin: 0; max-width: 300px; }
+.csent .geist-btn { margin-top: 12px; }
 
 /* ---------- DRAWER DE PROYECTO ---------- */
 .drawer-scrim { position: fixed; inset: 0; z-index: 60; background: var(--ds-gray-alpha-700); display: flex; justify-content: flex-end; }
@@ -891,39 +900,39 @@ h1, h2, h3, h4 { margin: 0; }
 .att-file button { border: none; background: none; cursor: pointer; color: var(--ds-gray-700); padding: 2px 4px; }
 .att-file button:hover { color: var(--ds-red-800); }
 
-/* ---------- ADMIN: bandeja de mensajes ---------- */
-.msg-row { appearance: none; text-align: left; width: 100%; cursor: pointer;
-  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-  border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-md);
-  background: var(--ds-background-100); transition: border-color .15s var(--ds-ease), box-shadow .15s var(--ds-ease); }
-.msg-row:hover { border-color: var(--ds-gray-alpha-500); box-shadow: var(--ds-shadow-card); }
-.msg-row:focus-visible { outline: none; box-shadow: var(--ds-ring); }
+/* ---------- ADMIN: bandeja de mensajes (filas collapsables) ---------- */
+.msg-item { border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-md);
+  background: var(--ds-background-100); overflow: hidden;
+  transition: border-color .15s var(--ds-ease), box-shadow .15s var(--ds-ease); }
+.msg-item:hover { border-color: var(--ds-gray-alpha-500); }
+.msg-item.is-open { border-color: var(--ds-gray-alpha-500); box-shadow: var(--ds-shadow-card); }
+.msg-row { appearance: none; text-align: left; width: 100%; cursor: pointer; border: none; background: none;
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.msg-row:hover { background: var(--ds-gray-alpha-100); }
+.msg-row:focus-visible { outline: none; box-shadow: var(--ds-ring); border-radius: var(--ds-radius-md); }
 .msg-row__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: transparent; }
-.msg-row.is-unread .msg-row__dot { background: var(--ds-blue-700); }
+.msg-item.is-unread .msg-row__dot { background: var(--ds-blue-700); }
 .msg-row__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .msg-row__head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .msg-row__head strong { font: var(--ds-label-14); color: var(--ds-gray-1000); }
-.msg-row.is-unread .msg-row__head strong { font-weight: 600; }
+.msg-item.is-unread .msg-row__head strong { font-weight: 600; }
 .msg-row__mail { font: var(--ds-label-12-mono); color: var(--ds-gray-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg-row__subject { font: var(--ds-copy-13); color: var(--ds-gray-900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg-row__when { font: var(--ds-label-12-mono); color: var(--ds-gray-700); flex: none; }
+.msg-row__chev { flex: none; display: inline-flex; transition: transform .15s var(--ds-ease); }
+.msg-item.is-open .msg-row__chev { transform: rotate(180deg); }
 
-.msgm { width: min(560px, 100%); max-height: 84vh; overflow-y: auto;
-  background: var(--ds-background-100); border: 1px solid var(--ds-gray-alpha-400);
-  border-radius: var(--ds-radius-lg); box-shadow: var(--ds-shadow-modal); padding: 24px;
-  animation: pvIn .3s var(--ds-ease); }
-.msgm__head { display: flex; align-items: center; gap: 14px; }
-.msgm__who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.msgm__who strong { font: var(--ds-heading-16); letter-spacing: var(--ds-tracking-16); }
-.msgm__who a { font: var(--ds-label-13-mono); color: var(--ds-text-link); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.msgm__who a:hover { text-decoration: underline; }
-.msgm__meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 16px 0 0; }
-.msgm__date { font: var(--ds-label-12-mono); color: var(--ds-gray-700); }
-.msgm__body { margin-top: 14px; padding: 16px; border: 1px solid var(--ds-gray-alpha-300);
-  border-radius: var(--ds-radius-md); background: var(--ds-background-200); }
-.msgm__body p { font: var(--ds-copy-14); color: var(--ds-gray-1000); margin: 0 0 10px; white-space: pre-line; }
-.msgm__body p:last-child { margin-bottom: 0; }
-.msgm__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.msg-detail { padding: 0 16px 16px; border-top: 1px solid var(--ds-gray-alpha-300); }
+.msg-detail__meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-top: 14px; }
+.msg-detail__date { font: var(--ds-label-12-mono); color: var(--ds-gray-700); }
+.msg-detail__mail { font: var(--ds-label-12-mono); color: var(--ds-text-link); margin-left: auto;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-detail__mail:hover { text-decoration: underline; }
+.msg-detail__body { margin-top: 12px; padding: 14px 16px; border: 1px solid var(--ds-gray-alpha-300);
+  border-radius: var(--ds-radius-sm); background: var(--ds-background-200); }
+.msg-detail__body p { font: var(--ds-copy-14); color: var(--ds-gray-1000); margin: 0 0 10px; white-space: pre-line; }
+.msg-detail__body p:last-child { margin-bottom: 0; }
+.msg-detail__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
 
 /* ---------- MODAL DE PREVIEW (Ver sitio) ---------- */
 .pv-scrim { position: fixed; inset: 0; z-index: 70; background: var(--ds-gray-alpha-700); display: flex; align-items: center; justify-content: center; padding: 24px; }

@@ -55,9 +55,23 @@ export function ContactPage() {
         </div>
         <Card>
           {send.isSuccess ? (
-            <Note type="success" label={t.contact.sentLabel}>
-              {t.contact.sentBody}
-            </Note>
+            <div className="csent">
+              <span className="csent__ic">
+                <Icon name="circle-check" size={22} />
+              </span>
+              <h3>{t.contact.sentLabel}</h3>
+              <p>{t.contact.sentBody}</p>
+              <Button
+                variant="tertiary"
+                size="small"
+                onClick={() => {
+                  send.reset();
+                  setForm({ name: "", email: "", subject: "", message: "" });
+                }}
+              >
+                {t.contact.sendAnother}
+              </Button>
+            </div>
           ) : (
             <form className="cform" onSubmit={onSubmit}>
               <Input

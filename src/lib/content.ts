@@ -104,6 +104,7 @@ export interface Content {
     available: string;
     sentLabel: string;
     sentBody: string;
+    sendAnother: string;
     errorLabel: string;
     errorBody: string;
     f: {
@@ -269,6 +270,7 @@ const es: Content = {
     available: "Disponible para nuevos proyectos",
     sentLabel: "Mensaje enviado",
     sentBody: "Gracias por escribir. Te respondo a la brevedad.",
+    sendAnother: "Enviar otro mensaje",
     errorLabel: "No se pudo enviar",
     errorBody: "Hubo un problema al enviar el mensaje. Probá de nuevo en un momento.",
     f: {
@@ -413,6 +415,7 @@ const en: Content = {
     available: "Available for new projects",
     sentLabel: "Message sent",
     sentBody: "Thanks for reaching out. I'll get back to you shortly.",
+    sendAnother: "Send another message",
     errorLabel: "Message not sent",
     errorBody: "Something went wrong sending your message. Try again in a moment.",
     f: {
