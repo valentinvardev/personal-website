@@ -24,6 +24,9 @@ next-env.d.ts
 # production
 /build
 
+# pm2
+/logs
+
 # misc
 .DS_Store
 *.pem
