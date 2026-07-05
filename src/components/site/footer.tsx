@@ -21,7 +21,7 @@ export function Footer() {
     <footer className="footer">
       <div className="footer__inner">
         <div className="footer__brand">
-          <Logo height={34} />
+          <Logo height={28} />
           <p>{t.footer.tag}</p>
           <div className="footer__social">
             {LINKS.map((l) => (

@@ -102,7 +102,7 @@ export function TopNav() {
       <nav className={"nav" + (scrolled ? " nav--scrolled" : "")}>
         <div className="nav__inner">
           <Link href="/" className="brand" aria-label="Inicio">
-            <Logo height={30} />
+            <Logo height={24} />
           </Link>
           <div className="nav__links">
             {links.map(([href, label]) => (
@@ -144,7 +144,7 @@ export function TopNav() {
           >
             <div className="mnav__head">
               <Link href="/" className="brand" aria-label="Inicio" onClick={() => setOpen(false)}>
-                <Logo height={26} />
+                <Logo height={22} />
               </Link>
               <button
                 type="button"
