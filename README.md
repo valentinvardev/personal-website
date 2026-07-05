@@ -70,6 +70,59 @@ src/
 prisma/schema.prisma    # ContactMessage (Postgres/Supabase)
 ```
 
+## Deploy en el VPS (pm2 + nginx)
+
+La base ya vive en Supabase, así que el VPS solo corre Next.js.
+
+```bash
+# 1. Código y dependencias (Node 20+)
+cd ~/valentinvarela
+git clone https://github.com/valentinvardev/personal-website.git .
+nano .env                # DATABASE_URL, DIRECT_URL, ADMIN_PASSWORD fuerte,
+                         # NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+                         # SUPABASE_SECRET_KEY (mismos valores que en dev, salvo la contraseña)
+npm ci                   # postinstall corre prisma generate
+
+# 2. Build y proceso
+npm run build
+pm2 start ecosystem.config.cjs   # app "valentinvarela" en el puerto 3013
+pm2 save
+```
+
+Para actualizar: `git pull && npm ci && npm run build && pm2 restart valentinvarela`.
+
+### nginx (dominio → puerto interno)
+
+```nginx
+server {
+    server_name valentinvarela.cloud www.valentinvarela.cloud;
+    listen 80;
+
+    location / {
+        proxy_pass http://127.0.0.1:3013;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        client_max_body_size 60m;   # subidas del admin (hasta 50 MB)
+    }
+}
+```
+
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+sudo certbot --nginx -d valentinvarela.cloud -d www.valentinvarela.cloud
+```
+
+> Notas: el puerto interno es **3013** (los puertos < 1024, como el 13, requieren
+> root y no se usan para apps Node). En producción la cookie del admin es
+> `secure`: entrá a `/admin` siempre por **https** con el dominio (por
+> `http://ip:3013` el login no persiste). El `client_max_body_size` es
+> necesario para que nginx no corte las subidas de capturas y archivos.
+
 ## Design system
 
 El diseño está basado en **Geist**, el design system open-source de Vercel, generado con Claude Design y portado a este repo (la carpeta de referencia `_geist-design/` con tokens, mockups y UI kits vive fuera del repo, en el workspace local). Si cambiás algo del sistema, mantené los nombres de tokens `--ds-*`.
