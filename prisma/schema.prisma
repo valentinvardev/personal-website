@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+    output   = "../generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+    // Con Supabase: DATABASE_URL = pooler (puerto 6543, pgbouncer) y
+    // DIRECT_URL = conexión directa (puerto 5432) para migraciones.
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+model ContactMessage {
+    id        Int      @id @default(autoincrement())
+    name      String
+    email     String
+    subject   String?
+    message   String
+    createdAt DateTime @default(now())
+
+    @@index([createdAt])
+}
+
+// Captura de página completa de un proyecto, mostrada como tab en el modal
+// de preview ("Ver sitio"). projectSlug referencia los slugs de content.ts.
+model ProjectSection {
+    id          Int      @id @default(autoincrement())
+    projectSlug String
+    label       String
+    labelEn     String?
+    imageUrl    String
+    sortOrder   Int      @default(0)
+    createdAt   DateTime @default(now())
+
+    @@index([projectSlug, sortOrder])
+}
