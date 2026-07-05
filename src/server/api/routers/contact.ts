@@ -1,8 +1,13 @@
 import { z } from "zod";
 
-import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import {
+  adminProcedure,
+  createTRPCRouter,
+  publicProcedure,
+} from "~/server/api/trpc";
 
 export const contactRouter = createTRPCRouter({
+  /** Envío del formulario público de contacto. */
   send: publicProcedure
     .input(
       z.object({
@@ -22,5 +27,33 @@ export const contactRouter = createTRPCRouter({
         },
       });
       return { ok: true };
+    }),
+
+  /* ---- Bandeja de entrada del admin ---- */
+
+  list: adminProcedure.query(({ ctx }) => {
+    return ctx.db.contactMessage.findMany({
+      orderBy: [{ createdAt: "desc" }],
+      take: 200,
+    });
+  }),
+
+  unreadCount: adminProcedure.query(({ ctx }) => {
+    return ctx.db.contactMessage.count({ where: { read: false } });
+  }),
+
+  markRead: adminProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(({ ctx, input }) => {
+      return ctx.db.contactMessage.update({
+        where: { id: input.id },
+        data: { read: true },
+      });
+    }),
+
+  delete: adminProcedure
+    .input(z.object({ id: z.number().int() }))
+    .mutation(({ ctx, input }) => {
+      return ctx.db.contactMessage.delete({ where: { id: input.id } });
     }),
 });
