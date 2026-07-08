@@ -9,7 +9,13 @@ import { usePrefs } from "./prefs";
 
 export interface NicheListRow extends NicheRecord {
   _count: { projects: number };
-  projects: { slug: string; name: string; icon: string; color: string }[];
+  projects: {
+    slug: string;
+    name: string;
+    icon: string;
+    color: string;
+    logoUrl: string | null;
+  }[];
 }
 
 /**
@@ -40,16 +46,24 @@ export function NicheCard({ n }: { n: NicheListRow }) {
       {v.tagline && <p>{v.tagline}</p>}
       <div className="ncard__foot">
         <span className="ncard__strip">
-          {n.projects.slice(0, 4).map((p) => (
-            <span
-              key={p.slug}
-              className="ncard__mini"
-              style={{ background: accentVar(p.color, 700) }}
-              title={p.name}
-            >
-              <Icon name={asIcon(p.icon)} size={11} />
-            </span>
-          ))}
+          {n.projects.slice(0, 4).map((p) =>
+            p.logoUrl ? (
+              // Con logo cargado, el mini muestra el logo real del proyecto.
+              <span key={p.slug} className="ncard__mini ncard__mini--logo" title={p.name}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.logoUrl} alt={p.name} loading="lazy" />
+              </span>
+            ) : (
+              <span
+                key={p.slug}
+                className="ncard__mini"
+                style={{ background: accentVar(p.color, 700) }}
+                title={p.name}
+              >
+                <Icon name={asIcon(p.icon)} size={11} />
+              </span>
+            ),
+          )}
         </span>
         <span className="ncard__more">
           {t.niches.view} <Icon name="arrow-right" size={14} />

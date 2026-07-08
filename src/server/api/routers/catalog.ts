@@ -83,7 +83,7 @@ const blockInput = z.object({
 });
 
 const projectPreview = {
-  select: { slug: true, name: true, icon: true, color: true },
+  select: { slug: true, name: true, icon: true, color: true, logoUrl: true },
   orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
 };
 

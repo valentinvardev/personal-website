@@ -788,9 +788,11 @@ h1, h2, h3, h4 { margin: 0; }
 .ncard__foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding-top: 18px; }
 .ncard__strip { display: inline-flex; }
 .ncard__mini { width: 22px; height: 22px; border-radius: 6px; flex: none; color: #fff;
-  display: inline-flex; align-items: center; justify-content: center;
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
   box-shadow: 0 0 0 2px var(--ds-background-100); margin-left: -6px; }
 .ncard__mini:first-child { margin-left: 0; }
+.ncard__mini--logo { background: var(--ds-gray-100); border: 1px solid var(--ds-gray-alpha-300); }
+.ncard__mini--logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .ncard__more { display: inline-flex; align-items: center; gap: 5px; font: var(--ds-button-14); color: var(--ds-gray-1000); white-space: nowrap; }
 
 /* ---------- FILTROS POR NICHO ---------- */
