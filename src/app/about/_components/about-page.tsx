@@ -2,6 +2,7 @@
 
 import { Avatar } from "~/components/geist";
 import { StackChip } from "~/components/geist/tech-icon";
+import { AboutBackdrop } from "~/components/site/about-backdrop";
 import { PortraitHalftone } from "~/components/site/portrait-halftone";
 import { usePrefs } from "~/components/site/prefs";
 import { SectionHead } from "~/components/site/section-head";
@@ -10,6 +11,7 @@ export function AboutPage() {
   const { t } = usePrefs();
   return (
     <div className="wrap page-pad">
+      <AboutBackdrop />
       <div className="about-hero">
         <PortraitHalftone src="/valentin.jpg" alt="Valentín Varela" />
         <div>
