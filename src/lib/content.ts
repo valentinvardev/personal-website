@@ -167,7 +167,7 @@ const es: Content = {
   hero: {
     badge: "Disponible para proyectos freelance",
     title: "Desarrollador de sistemas y diseñador visual.",
-    sub: "Diseño y construyo plataformas web completas —de la base de datos al último pixel— para negocios que quieren lanzar rápido y crecer.",
+    sub: "Diseño y construyo plataformas web completas, de la base de datos al último pixel, para negocios que quieren lanzar rápido y crecer.",
     ctaPrimary: "Ver proyectos",
     ctaSecondary: "Hablemos",
     stats: [
@@ -244,9 +244,9 @@ const es: Content = {
     eyebrow: "Trayectoria",
     title: "Experiencia",
     items: [
-      { role: "Desarrollador freelance", when: "2023 — hoy", org: "Independiente", desc: "Diseño y construyo plataformas para clientes: e-commerce, SaaS y sistemas de reconocimiento facial." },
-      { role: "Full-stack developer", when: "2021 — 2023", org: "Proyectos propios", desc: "Lancé varias plataformas de fotografía y ventas online sobre el stack T3." },
-      { role: "Primeros pasos", when: "2019 — 2021", org: "Autodidacta", desc: "Empecé combinando desarrollo web y diseño visual, mis dos obsesiones." },
+      { role: "Desarrollador freelance", when: "2023 - hoy", org: "Independiente", desc: "Diseño y construyo plataformas para clientes: e-commerce, SaaS y sistemas de reconocimiento facial." },
+      { role: "Full-stack developer", when: "2021 - 2023", org: "Proyectos propios", desc: "Lancé varias plataformas de fotografía y ventas online sobre el stack T3." },
+      { role: "Primeros pasos", when: "2019 - 2021", org: "Autodidacta", desc: "Empecé combinando desarrollo web y diseño visual, mis dos obsesiones." },
     ],
   },
   stack: {
@@ -267,7 +267,7 @@ const es: Content = {
       { quote: "Valentín entendió el producto mejor que nosotros y lo entregó antes de tiempo.", name: "Organizador de eventos", role: "Fotografía deportiva" },
       { quote: "La tienda quedó impecable y rapidísima. Muy recomendable.", name: "Dueño de tienda", role: "E-commerce" },
     ],
-    note: "Testimonios de muestra — se reemplazan con reales cuando estén disponibles.",
+    note: "Testimonios de muestra. Se reemplazan con reales cuando estén disponibles.",
   },
   contact: {
     eyebrow: "Contacto",
@@ -317,7 +317,7 @@ const en: Content = {
   hero: {
     badge: "Available for freelance work",
     title: "Systems developer & visual designer.",
-    sub: "I design and build complete web platforms —from the database to the last pixel— for businesses that want to launch fast and grow.",
+    sub: "I design and build complete web platforms, from the database to the last pixel, for businesses that want to launch fast and grow.",
     ctaPrimary: "View projects",
     ctaSecondary: "Let's talk",
     stats: [
@@ -356,7 +356,7 @@ const en: Content = {
     eyebrow: "Where I work",
     title: "Niches",
     pageLead: "Each niche gathers the projects, learnings and material from the same terrain.",
-    homeSub: "The worlds where I've already built — and keep building.",
+    homeSub: "The worlds where I've already built, and keep building.",
     all: "View all",
     view: "View niche",
     one: "project",
@@ -394,9 +394,9 @@ const en: Content = {
     eyebrow: "Track record",
     title: "Experience",
     items: [
-      { role: "Freelance developer", when: "2023 — now", org: "Independent", desc: "I design and build platforms for clients: e-commerce, SaaS and facial recognition systems." },
-      { role: "Full-stack developer", when: "2021 — 2023", org: "Own projects", desc: "Launched several photography and online-sales platforms on the T3 stack." },
-      { role: "Early days", when: "2019 — 2021", org: "Self-taught", desc: "Started by combining web development and visual design, my two obsessions." },
+      { role: "Freelance developer", when: "2023 - now", org: "Independent", desc: "I design and build platforms for clients: e-commerce, SaaS and facial recognition systems." },
+      { role: "Full-stack developer", when: "2021 - 2023", org: "Own projects", desc: "Launched several photography and online-sales platforms on the T3 stack." },
+      { role: "Early days", when: "2019 - 2021", org: "Self-taught", desc: "Started by combining web development and visual design, my two obsessions." },
     ],
   },
   stack: {
@@ -412,7 +412,7 @@ const en: Content = {
       { quote: "Valentín understood the product better than we did and shipped ahead of schedule.", name: "Event organizer", role: "Sports photography" },
       { quote: "The store came out flawless and blazing fast. Highly recommended.", name: "Store owner", role: "E-commerce" },
     ],
-    note: "Sample testimonials — to be replaced with real ones.",
+    note: "Sample testimonials. To be replaced with real ones.",
   },
   contact: {
     eyebrow: "Contact",

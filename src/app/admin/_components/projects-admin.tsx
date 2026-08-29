@@ -246,7 +246,7 @@ function ProjectEditor({
             value={d.logoUrl}
             onChange={(logoUrl) => set({ logoUrl })}
             folder="logos"
-            label="Logo del proyecto (opcional — reemplaza al icono y color)"
+            label="Logo del proyecto (opcional, reemplaza al icono y color)"
           />
         </div>
         <div>
@@ -277,7 +277,7 @@ function ProjectEditor({
             label="Stack"
             value={d.stack}
             onChange={(e) => set({ stack: e.target.value })}
-            hint="Separado por comas — las tecnologías conocidas muestran su logo"
+            hint="Separado por comas. Las tecnologías conocidas muestran su logo"
             fullWidth
           />
         </div>

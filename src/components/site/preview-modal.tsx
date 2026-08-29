@@ -79,7 +79,7 @@ export function PreviewModal({ p, onClose }: { p: ProjectView; onClose: () => vo
           ) : current ? (
             // Captura de página completa: el usuario scrollea sobre la imagen.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={current.imageUrl} alt={`${p.name} — ${current.label}`} />
+            <img src={current.imageUrl} alt={`${p.name}: ${current.label}`} />
           ) : (
             <div className="pv__state">
               <Note type="default">{t.preview.empty}</Note>

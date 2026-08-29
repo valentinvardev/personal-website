@@ -248,9 +248,9 @@ const BLOCKS = [
     sortOrder: 0,
     title: "Por qué este nicho",
     titleEn: "Why this niche",
-    body: "Un evento deportivo produce miles de fotos y cada corredor busca solo las suyas. Construí dos plataformas que resuelven esa búsqueda —por número de dorsal y por reconocimiento facial— y el patrón se repite: ingesta masiva, indexado rápido y venta directa sin fricción.",
+    body: "Un evento deportivo produce miles de fotos y cada corredor busca solo las suyas. Construí dos plataformas que resuelven esa búsqueda, por número de dorsal y por reconocimiento facial, y el patrón se repite: ingesta masiva, indexado rápido y venta directa sin fricción.",
     bodyEn:
-      "A sports event produces thousands of photos and every runner is looking for just theirs. I built two platforms that solve that search —by bib number and by facial recognition— and the pattern repeats: massive ingestion, fast indexing and frictionless direct sales.",
+      "A sports event produces thousands of photos and every runner is looking for just theirs. I built two platforms that solve that search, by bib number and by facial recognition, and the pattern repeats: massive ingestion, fast indexing and frictionless direct sales.",
   },
   {
     nicheSlug: "fotografia-eventos",

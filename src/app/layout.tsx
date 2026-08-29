@@ -10,11 +10,11 @@ import { TRPCReactProvider } from "~/trpc/react";
 
 export const metadata: Metadata = {
   title: {
-    default: "Valentín Varela — Desarrollador de sistemas y diseñador visual",
-    template: "%s — Valentín Varela",
+    default: "Valentín Varela | Desarrollador de sistemas y diseñador visual",
+    template: "%s | Valentín Varela",
   },
   description:
-    "Diseño y construyo plataformas web completas —de la base de datos al último pixel— para negocios que quieren lanzar rápido y crecer.",
+    "Diseño y construyo plataformas web completas, de la base de datos al último pixel, para negocios que quieren lanzar rápido y crecer.",
   metadataBase: new URL("https://valentinvarela.cloud"),
 };
 
