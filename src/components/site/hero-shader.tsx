@@ -5,12 +5,18 @@ import { useEffect, useRef } from "react";
 import { usePrefs } from "~/components/site/prefs";
 
 /**
- * Fondo del hero: una luz azul lenta (ruido fbm) sobre una trama de píxeles.
- * Donde pasa la luz, los puntos del raster crecen: "de la base de datos al
- * último pixel". WebGL1 crudo, sin dependencias.
+ * Fondo del hero: un mismo campo de luz (ruido fbm en dos capas) dibujado
+ * de tres maneras según dónde se mira. "De la base de datos al último pixel".
+ * WebGL1 crudo, sin dependencias.
  *
- * - Colores derivados de los tokens Geist (blue-300/500 en claro, blue-700 en
- *   oscuro) y transición suave entre temas.
+ * - Oscuro, escritorio: luz azul sobre una trama de puntos que crecen donde
+ *   pasa la luz.
+ * - Claro, escritorio: la luz tramada en tinta con dither ordenado (Bayer
+ *   8x8, píxeles de 3 px); sobre blanco un brillo no se ve, una trama sí.
+ * - Móvil (ambos temas): líneas de nivel del campo, como un plano
+ *   topográfico; a tamaño chico se nota sin tapar el texto.
+ *
+ * - Colores derivados de los tokens Geist y transición suave entre temas.
  * - 30 fps como máximo, DPR limitado a 1.5, se pausa fuera de pantalla y con
  *   la pestaña oculta. Con prefers-reduced-motion dibuja un solo cuadro.
  * - Si no hay WebGL, el canvas queda invisible y se ve el degradé CSS de
@@ -19,12 +25,16 @@ import { usePrefs } from "~/components/site/prefs";
 
 const VERT = `attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`;
 
-const FRAG = `
+/* Ancho (px CSS) por debajo del cual se usa la variante móvil. */
+const MOBILE_MAX = 700;
+
+const FRAG_BODY = `
 precision highp float;
 uniform vec2 u_res;
 uniform float u_time;
 uniform float u_theme;
 uniform float u_scale;
+uniform float u_mobile;
 
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
 vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -54,55 +64,113 @@ float fbm(vec2 p){
 }
 float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
 
+/* Bayer 2x2 -> 8x8 por recursión (sin operaciones de bits en GLSL ES 1.0). */
+float b2(vec2 p){p=mod(p,2.0);return mod(2.0*p.x+3.0*p.y,4.0);}
+float bayer8(vec2 p){return (4.0*(4.0*b2(p)+b2(floor(p/2.0)))+b2(floor(p/4.0))+0.5)/64.0;}
+
+/* Campo de luz: dos capas de ruido anchas, la segunda deformada por la
+   primera. Es el mismo campo para las tres variantes. */
+float field(vec2 p,float t){
+  float n1=fbm(p*1.0+vec2(t*0.7,-t*0.4));
+  float n2=fbm(p*1.6-vec2(t*0.35,t*0.55)+n1*0.7);
+  return n2*0.8+n1*0.5;
+}
+/* Más presencia arriba a la derecha (stats); casi nada detrás del titular. */
+float bias(vec2 uv){return smoothstep(0.0,1.0,uv.x*0.7+uv.y*0.5);}
+
+/* Oscuro / escritorio: luz azul sobre puntos que crecen con la luz. */
+vec3 glowDots(vec2 frag,vec2 uv,vec2 p,float t){
+  float light=smoothstep(-0.35,0.95,field(p,t))*(0.2+0.8*bias(uv));
+  vec3 col=mix(vec3(0.039),vec3(0.02,0.075,0.19),light*0.9);
+  col=mix(col,vec3(0.0,0.447,0.961),pow(light,2.6)*0.25);
+  float spacing=14.0*u_scale;
+  float d=length(fract(frag/spacing)-0.5);
+  float r=mix(0.05,0.2,light);
+  float dotMask=1.0-smoothstep(r-0.06,r+0.06,d);
+  return mix(col,vec3(1.0),dotMask*0.11*(0.2+0.8*light));
+}
+
+/* Claro / escritorio: la luz tramada en tinta (dither ordenado, 3 px). */
+vec3 ditherInk(vec2 frag,float aspect,float t){
+  float px=3.0*u_scale;
+  vec2 cellId=floor(frag/px);
+  vec2 cuv=(cellId+0.5)*px/u_res;
+  vec2 cp=vec2(cuv.x*aspect,cuv.y);
+  float light=smoothstep(-0.35,0.95,field(cp,t))*(0.05+0.95*bias(cuv));
+  float on=step(bayer8(cellId),light*0.6);
+  vec3 col=mix(vec3(1.0),vec3(0.875,0.937,1.0),light*0.4);
+  return mix(col,vec3(0.06,0.10,0.20),on*0.12);
+}
+
+/* Móvil: líneas de nivel del campo, plano topográfico en tinta. */
+vec3 contours(vec2 uv,vec2 p,float t){
+  float f=field(p*0.9,t);
+  float v=f*6.0;
+#ifdef HAS_DERIV
+  float w=fwidth(v)*0.9;
+#else
+  float w=0.05;
+#endif
+  float d=abs(fract(v)-0.5);
+  float line=1.0-smoothstep(0.0,w,d);
+  float crest=smoothstep(0.1,0.9,f);
+  vec3 bg=mix(vec3(1.0),vec3(0.039),u_theme);
+  vec3 wash=mix(vec3(0.875,0.937,1.0),vec3(0.02,0.075,0.19),u_theme);
+  vec3 ink=mix(vec3(0.0),vec3(1.0),u_theme);
+  vec3 blue=mix(vec3(0.0,0.42,1.0),vec3(0.32,0.66,1.0),u_theme);
+  vec3 col=mix(bg,wash,crest*0.35);
+  vec3 lc=mix(ink,blue,crest);
+  float a=line*mix(0.2,0.24,u_theme)*(0.55+0.45*crest);
+  /* Bajo el titular (arriba a la izquierda) las líneas se calman un poco. */
+  a*=0.6+0.4*smoothstep(0.0,1.0,uv.x*0.5+uv.y*0.6);
+  return mix(col,lc,a);
+}
+
 void main(){
   vec2 frag=gl_FragCoord.xy;
   vec2 uv=frag/u_res;
-  vec2 p=vec2(uv.x*(u_res.x/u_res.y),uv.y);
+  float aspect=u_res.x/u_res.y;
+  vec2 p=vec2(uv.x*aspect,uv.y);
   float t=u_time*0.05;
+  vec3 col;
 
-  /* Campo de luz: dos capas de ruido anchas, la segunda deformada por la
-     primera. Rango suave para que sea un baño de luz y no nubes. */
-  float n1=fbm(p*1.0+vec2(t*0.7,-t*0.4));
-  float n2=fbm(p*1.6-vec2(t*0.35,t*0.55)+n1*0.7);
-  float light=smoothstep(-0.35,0.95,n2*0.8+n1*0.5);
-  /* Más presencia arriba a la derecha (stats); casi nada detrás del titular. */
-  float bias=smoothstep(0.0,1.0,uv.x*0.7+uv.y*0.5);
-  light*=0.2+0.8*bias;
-  /* En pantallas angostas todo el ancho es texto: bajar la intensidad. */
-  float narrow=smoothstep(1.4,0.7,u_res.x/u_res.y);
-  light*=1.0-0.35*narrow;
-
-  /* Paleta Geist: fondo + blue-300/blue-500 (claro), navy + blue-700 (oscuro). */
-  vec3 bg=mix(vec3(1.0),vec3(0.039),u_theme);
-  vec3 c1=mix(vec3(0.875,0.937,1.0),vec3(0.02,0.075,0.19),u_theme);
-  vec3 c2=mix(vec3(0.580,0.800,1.0),vec3(0.0,0.447,0.961),u_theme);
-  vec3 col=mix(bg,c1,light*0.9);
-  col=mix(col,c2,pow(light,2.6)*mix(0.5,0.25,u_theme));
-
-  /* Trama de píxeles: puntos que crecen donde hay luz. */
-  float spacing=14.0*u_scale;
-  vec2 cell=fract(frag/spacing)-0.5;
-  float d=length(cell);
-  float r=mix(0.05,0.2,light);
-  float dotMask=1.0-smoothstep(r-0.06,r+0.06,d);
-  vec3 dotCol=mix(vec3(0.0),vec3(1.0),u_theme);
-  float dotA=dotMask*mix(0.10,0.11,u_theme)*(0.2+0.8*light);
-  col=mix(col,dotCol,dotA);
+  if(u_mobile>0.5){
+    col=contours(uv,p,t);
+  }else{
+    /* Solo se calcula la variante que se ve; ambas durante la transición. */
+    vec3 dark=vec3(0.0);vec3 light=vec3(0.0);
+    if(u_theme>0.001)dark=glowDots(frag,uv,p,t);
+    if(u_theme<0.999)light=ditherInk(frag,aspect,t);
+    col=mix(light,dark,u_theme);
+  }
 
   /* Grano fijo (no parpadea) para que no se vea plástico. */
-  col+=(hash(frag)-0.5)*mix(0.022,0.035,u_theme);
+  col+=(hash(frag)-0.5)*mix(0.02,0.035,u_theme);
   gl_FragColor=vec4(col,1.0);
 }`;
 
 const MAX_FPS = 30;
 
+/* El tema real ya está en <html data-theme> antes de hidratar (script inline);
+   el estado de React arranca en "light" y se sincroniza después. */
+function domTheme(): number {
+  return document.documentElement.getAttribute("data-theme") === "dark" ? 1 : 0;
+}
+
 export function HeroShader() {
   const ref = useRef<HTMLCanvasElement>(null);
   const { theme } = usePrefs();
-  const themeRef = useRef(theme === "dark" ? 1 : 0);
+  const themeRef = useRef(0);
   const kickRef = useRef<() => void>(() => undefined);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
+    // En el montaje React todavía dice "light" aunque sea de noche: se ignora
+    // y se usa el DOM. Después, cada cambio real de tema anima la transición.
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
     themeRef.current = theme === "dark" ? 1 : 0;
     kickRef.current();
   }, [theme]);
@@ -118,10 +186,15 @@ export function HeroShader() {
       powerPreference: "low-power",
     });
     if (!gl) return;
+    themeRef.current = domTheme();
+
+    const hasDeriv = Boolean(gl.getExtension("OES_standard_derivatives"));
+    const FRAG = (hasDeriv ? "#extension GL_OES_standard_derivatives : enable\n#define HAS_DERIV 1\n" : "") + FRAG_BODY;
 
     const compile = (type: number, src: string): WebGLShader | null => {
       const s = gl.createShader(type);
       if (!s) return null;
+      // `#extension` debe ir antes que cualquier otra línea del shader.
       gl.shaderSource(s, src);
       gl.compileShader(s);
       if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
@@ -152,13 +225,16 @@ export function HeroShader() {
     const uTime = gl.getUniformLocation(prog, "u_time");
     const uTheme = gl.getUniformLocation(prog, "u_theme");
     const uScale = gl.getUniformLocation(prog, "u_scale");
+    const uMobile = gl.getUniformLocation(prog, "u_mobile");
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scale = Math.min(window.devicePixelRatio || 1, 1.5);
+    let mobile = 0;
 
     const resize = () => {
       const w = Math.max(1, Math.round(canvas.clientWidth * scale));
       const h = Math.max(1, Math.round(canvas.clientHeight * scale));
+      mobile = canvas.clientWidth < MOBILE_MAX ? 1 : 0;
       if (canvas.width !== w || canvas.height !== h) {
         canvas.width = w;
         canvas.height = h;
@@ -180,6 +256,7 @@ export function HeroShader() {
       gl.uniform1f(uTime, (now - start) / 1000);
       gl.uniform1f(uTheme, themeMix);
       gl.uniform1f(uScale, scale);
+      gl.uniform1f(uMobile, mobile);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       canvas.dataset.ready = "";
     };
