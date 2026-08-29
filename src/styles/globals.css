@@ -720,6 +720,11 @@ h1, h2, h3, h4 { margin: 0; }
   pointer-events: none; opacity: 0; transition: opacity 1s ease; }
 .about-bg[data-ready] { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .about-bg { transition: none; } }
+/* Corriente de tinta del home: fija detrás de todo. El hero la tapa con su
+   propio canvas y asoma por el degradé de su máscara; el footer la tapa. */
+.home-flow { position: fixed; inset: 0; z-index: -1; width: 100%; height: 100%; display: block;
+  pointer-events: none; opacity: 0; transition: opacity 1.5s ease; }
+.home-flow[data-ready] { opacity: 1; }
 .about-body { margin-top: 28px; max-width: 660px; }
 .about-body p { font: var(--ds-copy-18); color: var(--ds-gray-900); margin: 0 0 18px; }
 .timeline { display: flex; flex-direction: column; }

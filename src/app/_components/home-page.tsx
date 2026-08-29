@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Badge, Icon } from "~/components/geist";
 import { ButtonLink } from "~/components/site/button-link";
 import { HeroShader } from "~/components/site/hero-shader";
+import { HomeFlow } from "~/components/site/home-flow";
 import { NicheCard } from "~/components/site/niche-card";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectRow } from "~/components/site/project-bits";
@@ -32,6 +33,8 @@ export function HomePage({
 
   return (
     <div>
+      {/* ---- Corriente de tinta: fija detrás de todo, asoma donde termina el hero ---- */}
+      <HomeFlow />
       {/* ---- Hero (dirección A: editorial) sobre el shader de luz ---- */}
       <div className="hero-wrap">
         <HeroShader />
