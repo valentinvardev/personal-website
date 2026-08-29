@@ -702,8 +702,18 @@ h1, h2, h3, h4 { margin: 0; }
 .seg button.on { background: var(--ds-gray-alpha-200); color: var(--ds-gray-1000); }
 
 /* ---------- SOBRE MÍ ---------- */
-.about-hero { display: flex; align-items: center; gap: 20px; }
+.about-hero { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
 .about-hero h1 { font: var(--ds-heading-48); letter-spacing: var(--ds-tracking-48); margin-top: 6px; }
+/* Retrato en semitono: la <img> real debajo (lectores de pantalla, sin
+   WebGL); el canvas encima cuando ya dibujó. La lente sigue al puntero. */
+.portrait { position: relative; width: 200px; height: 200px; flex: none; overflow: hidden;
+  border-radius: var(--ds-radius-lg); border: 1px solid var(--ds-gray-alpha-300); background: var(--ds-background-100); }
+.portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.portrait__gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  opacity: 0; transition: opacity .4s ease; touch-action: pan-y; cursor: crosshair; }
+.portrait__gl[data-ready] { opacity: 1; }
+@media (max-width: 640px) { .portrait { width: 160px; height: 160px; } }
+@media (prefers-reduced-motion: reduce) { .portrait__gl { transition: none; } }
 .about-body { margin-top: 28px; max-width: 660px; }
 .about-body p { font: var(--ds-copy-18); color: var(--ds-gray-900); margin: 0 0 18px; }
 .timeline { display: flex; flex-direction: column; }
