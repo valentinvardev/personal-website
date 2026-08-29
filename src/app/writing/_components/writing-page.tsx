@@ -4,12 +4,14 @@ import { Note } from "~/components/geist";
 import { PostCard } from "~/components/site/post-card";
 import { usePrefs } from "~/components/site/prefs";
 import { Reveal } from "~/components/site/reveal";
+import { WritingInk } from "~/components/site/writing-ink";
 import type { RouterOutputs } from "~/trpc/react";
 
 export function WritingPage({ posts }: { posts: RouterOutputs["posts"]["list"] }) {
   const { t } = usePrefs();
   return (
     <div className="writing">
+      <WritingInk />
       <div className="wrap page-pad">
         <div className="page-head page-head--center">
           <div>

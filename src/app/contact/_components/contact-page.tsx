@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { Button, Card, Icon, Input, Note, Textarea } from "~/components/geist";
+import { ContactWaves } from "~/components/site/contact-waves";
 import { usePrefs } from "~/components/site/prefs";
 import { LINKS } from "~/lib/content";
 import { api } from "~/trpc/react";
@@ -19,6 +20,7 @@ export function ContactPage() {
 
   return (
     <div className="wrap page-pad">
+      <ContactWaves />
       <div className="contact-grid">
         <div>
           <div className="eyebrow">{t.contact.eyebrow}</div>

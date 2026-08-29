@@ -244,6 +244,7 @@ const es: Content = {
     eyebrow: "Trayectoria",
     title: "Experiencia",
     items: [
+      { role: "Forward Deployed Product Engineer", when: "ago 2026 - hoy", org: "Stealth Seller", desc: "Trabajo del lado de los clientes de la plataforma: convierto sus problemas en producto, desde entender la necesidad hasta diseñar la solución y llevarla a producción de punta a punta." },
       { role: "Desarrollador freelance", when: "2023 - hoy", org: "Independiente", desc: "Diseño y construyo plataformas para clientes: e-commerce, SaaS y sistemas de reconocimiento facial." },
       { role: "Full-stack developer", when: "2021 - 2023", org: "Proyectos propios", desc: "Lancé varias plataformas de fotografía y ventas online sobre el stack T3." },
       { role: "Primeros pasos", when: "2019 - 2021", org: "Autodidacta", desc: "Empecé combinando desarrollo web y diseño visual, mis dos obsesiones." },
@@ -394,6 +395,7 @@ const en: Content = {
     eyebrow: "Track record",
     title: "Experience",
     items: [
+      { role: "Forward Deployed Product Engineer", when: "Aug 2026 - now", org: "Stealth Seller", desc: "I work on the customers' side of the platform: turning their problems into product, from understanding the need to designing the solution and shipping it end to end." },
       { role: "Freelance developer", when: "2023 - now", org: "Independent", desc: "I design and build platforms for clients: e-commerce, SaaS and facial recognition systems." },
       { role: "Full-stack developer", when: "2021 - 2023", org: "Own projects", desc: "Launched several photography and online-sales platforms on the T3 stack." },
       { role: "Early days", when: "2019 - 2021", org: "Self-taught", desc: "Started by combining web development and visual design, my two obsessions." },
