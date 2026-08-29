@@ -91,6 +91,38 @@ pm2 save
 
 Para actualizar: `git pull && npm ci && npm run build && pm2 restart valentinvarela`.
 
+### Si el sitio "está caído" (500 intermitentes o páginas que tardan 10 s)
+
+Diagnóstico del 2026-08-29: el código estaba sano; el problema era `connection_limit=1`
+en `DATABASE_URL`. Con una sola conexión a Supabase (~1 s por query desde el VPS), las
+queries de todos los visitantes se serializan y la que espera más de `pool_timeout`
+(10 s por defecto) falla con P2024 → Next responde **500** en el home. Un bot o un
+segundo visitante alcanzan para dispararlo.
+
+```bash
+# en el VPS
+nano .env    # en DATABASE_URL: connection_limit=10&pool_timeout=20 (ver .env.example)
+pm2 restart valentinvarela --update-env
+# verificar: 6 requests simultáneos deben dar 200 todos
+for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w "%{http_code} %{time_total}s\n" https://valentinvarela.cloud/ & done; wait
+```
+
+Cómo comprobar desde afuera sin SSH: `curl -sk -H "Host: valentinvarela.cloud" https://<ip-del-vps>/`
+(salteando Cloudflare) y <https://check-host.net> (chequeo HTTP desde varios países).
+
+### Si los logos / favicon / foto dan 400
+
+Todos los archivos de `public/` respondían `400 Bad Request` en producción. Next 15.5
+normaliza a 400 **cualquier** error de lectura de un archivo estático que sí existía al
+arrancar (`router-server.js`): típicamente **permisos** (EACCES: el usuario de pm2 no puede
+leer el archivo) o el archivo desapareció después de arrancar (ENOENT). Revisar en el VPS:
+
+```bash
+ls -la public/            # deben ser -rw-r--r-- y legibles por el usuario de pm2
+pm2 describe valentinvarela | grep -E "exec cwd|script path|uid|username"
+chmod 644 public/* && pm2 restart valentinvarela
+```
+
 ### nginx (dominio → puerto interno)
 
 ```nginx
