@@ -597,6 +597,26 @@ h1, h2, h3, h4 { margin: 0; }
 .stat span { font: var(--ds-copy-13); color: var(--ds-gray-900); }
 @media (max-width: 860px) { .hero--a { grid-template-columns: 1fr; } .hero__stats--stack { flex-direction: row; } .hero--a h1 { font: var(--ds-heading-48); letter-spacing: var(--ds-tracking-48); } .hero h1 { font: var(--ds-heading-48); letter-spacing: var(--ds-tracking-48); } }
 
+/* ---------- HERO: luz sobre trama de píxeles (shader) ----------
+   .hero-wrap es la franja a todo el ancho; el canvas WebGL vive detrás del
+   hero y se funde con el fondo antes de la primera sección (mask). El ::before
+   es el respaldo CSS cuando no hay WebGL o mientras el canvas arranca. */
+.hero-wrap { position: relative; overflow: hidden; isolation: isolate; }
+.hero-wrap::before { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(60% 70% at 78% 28%, var(--ds-blue-300), transparent 70%); opacity: .8; }
+[data-theme="dark"] .hero-wrap::before { background: radial-gradient(60% 70% at 78% 28%, #0b2247, transparent 70%); }
+.hero-gl { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block; pointer-events: none;
+  opacity: 0; transition: opacity .9s ease; }
+.hero-gl[data-ready] { opacity: 1; }
+.hero-wrap::before, .hero-gl {
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%); }
+.hero-wrap .hero { position: relative; z-index: 1; padding-bottom: 64px; }
+/* Las stats se vuelven vidrio sobre la luz, como las tarjetas de escritos. */
+.hero--a .stat { background: color-mix(in srgb, var(--ds-background-100) 70%, transparent);
+  backdrop-filter: blur(12px) saturate(140%); -webkit-backdrop-filter: blur(12px) saturate(140%); }
+@media (prefers-reduced-motion: reduce) { .hero-gl { transition: none; } }
+
 /* ---------- SECCIONES ---------- */
 .section { padding: 56px 0; border-top: 1px solid var(--ds-gray-alpha-300); }
 .section__bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; }

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Badge, Icon } from "~/components/geist";
 import { ButtonLink } from "~/components/site/button-link";
+import { HeroShader } from "~/components/site/hero-shader";
 import { NicheCard } from "~/components/site/niche-card";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectRow } from "~/components/site/project-bits";
@@ -31,39 +32,42 @@ export function HomePage({
 
   return (
     <div>
-      {/* ---- Hero (dirección A: editorial) ---- */}
-      <header className="hero hero--a">
-        <div className="hero__left">
-          <Badge color="green" dot>
-            {t.hero.badge}
-          </Badge>
-          <h1>{t.hero.title}</h1>
-          <p>{t.hero.sub}</p>
-          <div className="hero__cta">
-            <ButtonLink href="/projects" variant="primary" size="large">
-              {t.hero.ctaPrimary}
-            </ButtonLink>
-            <ButtonLink
-              href="/contact"
-              variant="tertiary"
-              size="large"
-              suffix={<Icon name="arrow-right" size={16} />}
-            >
-              {t.hero.ctaSecondary}
-            </ButtonLink>
+      {/* ---- Hero (dirección A: editorial) sobre el shader de luz ---- */}
+      <div className="hero-wrap">
+        <HeroShader />
+        <header className="hero hero--a">
+          <div className="hero__left">
+            <Badge color="green" dot>
+              {t.hero.badge}
+            </Badge>
+            <h1>{t.hero.title}</h1>
+            <p>{t.hero.sub}</p>
+            <div className="hero__cta">
+              <ButtonLink href="/projects" variant="primary" size="large">
+                {t.hero.ctaPrimary}
+              </ButtonLink>
+              <ButtonLink
+                href="/contact"
+                variant="tertiary"
+                size="large"
+                suffix={<Icon name="arrow-right" size={16} />}
+              >
+                {t.hero.ctaSecondary}
+              </ButtonLink>
+            </div>
           </div>
-        </div>
-        <div className="hero__right">
-          <div className="hero__stats hero__stats--stack">
-            {t.hero.stats.map((s) => (
-              <div key={s.k} className="stat">
-                <strong>{s.v}</strong>
-                <span>{s.k}</span>
-              </div>
-            ))}
+          <div className="hero__right">
+            <div className="hero__stats hero__stats--stack">
+              {t.hero.stats.map((s) => (
+                <div key={s.k} className="stat">
+                  <strong>{s.v}</strong>
+                  <span>{s.k}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       <div className="wrap">
         {/* ---- Nichos: el estante de dossiers ---- */}
