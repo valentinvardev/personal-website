@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Badge, Icon } from "~/components/geist";
 import { ButtonLink } from "~/components/site/button-link";
 import { HeroShader } from "~/components/site/hero-shader";
-import { HomeDepth } from "~/components/site/home-depth";
+import { HomeField } from "~/components/site/home-field";
 import { NicheCard } from "~/components/site/niche-card";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectRow } from "~/components/site/project-bits";
@@ -33,8 +33,8 @@ export function HomePage({
 
   return (
     <div>
-      {/* ---- Profundidad de píxeles: fija detrás de todo, asoma donde termina el hero ---- */}
-      <HomeDepth />
+      {/* ---- Profundidad de campo (WebGPU via vgpu; fallback WebGL) ---- */}
+      <HomeField />
       {/* ---- Hero (dirección A: editorial) sobre el shader de luz ---- */}
       <div className="hero-wrap">
         <HeroShader />
