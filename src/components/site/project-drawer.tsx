@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Badge, Button, Icon } from "~/components/geist";
 import { StackChip } from "~/components/geist/tech-icon";
@@ -20,10 +20,28 @@ export function ProjectDrawer({
   onClose: () => void;
 }) {
   const [preview, setPreview] = useState(false);
+  const [closing, setClosing] = useState(false);
+
+  /* Cierre animado: primero corre la salida (.is-closing) y recién al
+     terminar se desmonta. Con reduced-motion se desmonta directo. */
+  const close = useCallback(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onClose();
+      return;
+    }
+    setClosing(true);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!closing) return;
+    // Red de seguridad por si animationend no llega (animaciones apagadas).
+    const timer = setTimeout(onClose, 450);
+    return () => clearTimeout(timer);
+  }, [closing, onClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     document.body.style.overflow = "hidden";
@@ -31,12 +49,18 @@ export function ProjectDrawer({
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = "";
     };
-  }, [onClose]);
+  }, [close]);
 
   return (
-    <div className="drawer-scrim" onClick={onClose}>
+    <div
+      className={"drawer-scrim" + (closing ? " is-closing" : "")}
+      onClick={close}
+      onAnimationEnd={(e) => {
+        if (closing && e.target === e.currentTarget) onClose();
+      }}
+    >
       <aside className="drawer" onClick={(e) => e.stopPropagation()}>
-        <button type="button" className="drawer__close" onClick={onClose} aria-label="Cerrar">
+        <button type="button" className="drawer__close" onClick={close} aria-label="Cerrar">
           ✕
         </button>
         <div className="drawer__head">

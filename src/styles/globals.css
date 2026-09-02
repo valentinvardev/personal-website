@@ -774,11 +774,29 @@ h1, h2, h3, h4 { margin: 0; }
 .csent p { font: var(--ds-copy-14); color: var(--ds-gray-900); margin: 0; max-width: 300px; }
 .csent .geist-btn { margin-top: 12px; }
 
-/* ---------- DRAWER DE PROYECTO ---------- */
-.drawer-scrim { position: fixed; inset: 0; z-index: 60; background: var(--ds-gray-alpha-700); display: flex; justify-content: flex-end; }
+/* ---------- DRAWER DE PROYECTO ----------
+   El fondo se difumina (backdrop blur + tinte leve del color de fondo, nunca
+   un velo blanco) y el panel entra desde fuera con la curva de los sheets de
+   iOS. El cierre corre las animaciones de salida antes de desmontar
+   (.is-closing, mismo patrón que el menú móvil). */
+.drawer-scrim { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end;
+  background: color-mix(in srgb, var(--ds-background-200) 25%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(130%); backdrop-filter: blur(14px) saturate(130%);
+  animation: scrimIn .4s ease both; }
 .drawer { width: min(520px, 100%); height: 100%; overflow-y: auto; background: var(--ds-background-100); border-left: 1px solid var(--ds-gray-alpha-400);
-  padding: 32px; position: relative; animation: slideIn .25s var(--ds-ease); }
-@keyframes slideIn { from { transform: translateX(24px); opacity: .4; } to { transform: none; opacity: 1; } }
+  padding: 32px; position: relative; animation: drawerIn .45s cubic-bezier(0.32, 0.72, 0, 1) both;
+  box-shadow: -24px 0 48px color-mix(in srgb, #000 10%, transparent); }
+@keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
+/* Salida: el panel se va primero (.28s) y el blur se apaga después (.34s). */
+.drawer-scrim.is-closing { animation: scrimOut .34s ease both; }
+.drawer-scrim.is-closing .drawer { animation: drawerOut .28s cubic-bezier(0.4, 0, 1, 1) both; }
+@keyframes scrimOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes drawerOut { from { transform: none; } to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .drawer-scrim, .drawer, .drawer-scrim.is-closing, .drawer-scrim.is-closing .drawer { animation: none; }
+  .drawer-scrim.is-closing { opacity: 0; }
+}
 .drawer__close { position: absolute; top: 20px; right: 20px; appearance: none; background: none; border: 1px solid var(--ds-gray-alpha-400); cursor: pointer;
   width: 32px; height: 32px; border-radius: var(--ds-radius-sm); color: var(--ds-gray-900); }
 .drawer__close:hover { background: var(--ds-gray-alpha-100); }
