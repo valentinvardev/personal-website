@@ -5,9 +5,11 @@ import { useEffect, useRef } from "react";
 import { usePrefs } from "~/components/site/prefs";
 
 /**
- * Fondo del hero: un mismo campo de luz (ruido fbm en dos capas) dibujado
- * de tres maneras según dónde se mira. "De la base de datos al último pixel".
- * WebGL1 crudo, sin dependencias.
+ * Fondo del home completo: un mismo campo de luz (ruido fbm en dos capas)
+ * dibujado de tres maneras según dónde se mira, fijo detrás de toda la
+ * página y anclado al contenido: el patrón scrollea con la página. Plena
+ * presencia en la franja del hero, calmado de ahí para abajo.
+ * "De la base de datos al último pixel". WebGL1 crudo, sin dependencias.
  *
  * - Oscuro, escritorio: luz azul sobre una trama de puntos que crecen donde
  *   pasa la luz.
@@ -17,10 +19,9 @@ import { usePrefs } from "~/components/site/prefs";
  *   topográfico; a tamaño chico se nota sin tapar el texto.
  *
  * - Colores derivados de los tokens Geist y transición suave entre temas.
- * - 30 fps como máximo, DPR limitado a 1.5, se pausa fuera de pantalla y con
- *   la pestaña oculta. Con prefers-reduced-motion dibuja un solo cuadro.
- * - Si no hay WebGL, el canvas queda invisible y se ve el degradé CSS de
- *   respaldo (.hero-wrap::before).
+ * - 30 fps como máximo, DPR limitado a 1.5, se pausa con la pestaña oculta.
+ *   Con prefers-reduced-motion dibuja un cuadro y se redibuja al scrollear.
+ * - Sin WebGL no se dibuja nada.
  */
 
 const VERT = `attribute vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`;
@@ -35,6 +36,7 @@ uniform float u_time;
 uniform float u_theme;
 uniform float u_scale;
 uniform float u_mobile;
+uniform float u_scroll;
 
 vec3 mod289(vec3 x){return x-floor(x*(1.0/289.0))*289.0;}
 vec2 mod289(vec2 x){return x-floor(x*(1.0/289.0))*289.0;}
@@ -75,42 +77,50 @@ float field(vec2 p,float t){
   float n2=fbm(p*1.6-vec2(t*0.35,t*0.55)+n1*0.7);
   return n2*0.8+n1*0.5;
 }
-/* Más presencia arriba a la derecha (stats); casi nada detrás del titular. */
-float bias(vec2 uv){return smoothstep(0.0,1.0,uv.x*0.7+uv.y*0.5);}
+/* Presencia: plena en la franja del hero, calmada de ahí para abajo. */
+float envelope(float pageY){return mix(1.0,0.38,smoothstep(520.0,1050.0,pageY));}
+
+/* En el hero, más presencia arriba a la derecha (stats) y casi nada detrás
+   del titular; pasada la franja del hero, presencia uniforme. */
+float bias(vec2 vp,float pageY){
+  vec2 uvv=vp/(u_res/u_scale); /* 0..1, y hacia abajo */
+  float hb=smoothstep(0.0,1.0,uvv.x*0.7+(1.0-uvv.y)*0.5);
+  float inHero=1.0-smoothstep(420.0,950.0,pageY);
+  return mix(0.75,0.1+0.9*hb,inHero);
+}
 
 /* Oscuro / escritorio: luz azul sobre puntos que crecen con la luz. */
-vec3 glowDots(vec2 frag,vec2 uv,vec2 p,float t){
-  float light=smoothstep(-0.35,0.95,field(p,t))*(0.2+0.8*bias(uv));
+vec3 glowDots(vec2 P,vec2 vp,float t){
+  float light=smoothstep(-0.35,0.95,field(P/820.0,t))*bias(vp,P.y)*envelope(P.y);
   vec3 col=mix(vec3(0.039),vec3(0.02,0.075,0.19),light*0.9);
   col=mix(col,vec3(0.0,0.447,0.961),pow(light,2.6)*0.25);
-  float spacing=14.0*u_scale;
-  float d=length(fract(frag/spacing)-0.5);
+  float d=length(fract(P/14.0)-0.5);
   float r=mix(0.05,0.2,light);
   float dotMask=1.0-smoothstep(r-0.06,r+0.06,d);
   return mix(col,vec3(1.0),dotMask*0.11*(0.2+0.8*light));
 }
 
 /* Claro / escritorio: la luz tramada en tinta (dither ordenado, 3 px). */
-vec3 ditherInk(vec2 frag,float aspect,float t){
-  float px=3.0*u_scale;
-  vec2 cellId=floor(frag/px);
-  vec2 cuv=(cellId+0.5)*px/u_res;
-  vec2 cp=vec2(cuv.x*aspect,cuv.y);
-  float light=smoothstep(-0.35,0.95,field(cp,t))*(0.05+0.95*bias(cuv));
+vec3 ditherInk(vec2 P,float t){
+  vec2 cellId=floor(P/3.0);
+  vec2 cP=(cellId+0.5)*3.0;
+  vec2 cvp=vec2(cP.x,cP.y-u_scroll);
+  float light=smoothstep(-0.35,0.95,field(cP/820.0,t))*bias(cvp,cP.y)*envelope(cP.y);
   float on=step(bayer8(cellId),light*0.6);
   vec3 col=mix(vec3(1.0),vec3(0.875,0.937,1.0),light*0.4);
   return mix(col,vec3(0.06,0.10,0.20),on*0.12);
 }
 
 /* Móvil: líneas de nivel del campo, plano topográfico en tinta. */
-vec3 contours(vec2 uv,vec2 p,float t){
-  float f=field(p*0.9,t);
+vec3 contours(vec2 P,vec2 vp,float t){
+  float f=field(P/780.0,t);
   float v=f*6.0;
 #ifdef HAS_DERIV
   float w=fwidth(v)*0.9;
 #else
   float w=0.05;
 #endif
+  float env=envelope(P.y);
   float d=abs(fract(v)-0.5);
   float line=1.0-smoothstep(0.0,w,d);
   float crest=smoothstep(0.1,0.9,f);
@@ -118,34 +128,31 @@ vec3 contours(vec2 uv,vec2 p,float t){
   vec3 wash=mix(vec3(0.875,0.937,1.0),vec3(0.02,0.075,0.19),u_theme);
   vec3 ink=mix(vec3(0.0),vec3(1.0),u_theme);
   vec3 blue=mix(vec3(0.0,0.42,1.0),vec3(0.32,0.66,1.0),u_theme);
-  vec3 col=mix(bg,wash,crest*0.35);
+  vec3 col=mix(bg,wash,crest*0.35*env);
   vec3 lc=mix(ink,blue,crest);
-  float a=line*mix(0.2,0.24,u_theme)*(0.55+0.45*crest);
-  /* Bajo el titular (arriba a la izquierda) las líneas se calman un poco. */
-  a*=0.6+0.4*smoothstep(0.0,1.0,uv.x*0.5+uv.y*0.6);
+  float a=line*mix(0.2,0.24,u_theme)*(0.55+0.45*crest)*env;
   return mix(col,lc,a);
 }
 
 void main(){
-  vec2 frag=gl_FragCoord.xy;
-  vec2 uv=frag/u_res;
-  float aspect=u_res.x/u_res.y;
-  vec2 p=vec2(uv.x*aspect,uv.y);
+  /* vp: viewport en px CSS (y hacia abajo). P: coordenada de página. */
+  vec2 vp=vec2(gl_FragCoord.x,u_res.y-gl_FragCoord.y)/u_scale;
+  vec2 P=vec2(vp.x,vp.y+u_scroll);
   float t=u_time*0.05;
   vec3 col;
 
   if(u_mobile>0.5){
-    col=contours(uv,p,t);
+    col=contours(P,vp,t);
   }else{
     /* Solo se calcula la variante que se ve; ambas durante la transición. */
     vec3 dark=vec3(0.0);vec3 light=vec3(0.0);
-    if(u_theme>0.001)dark=glowDots(frag,uv,p,t);
-    if(u_theme<0.999)light=ditherInk(frag,aspect,t);
+    if(u_theme>0.001)dark=glowDots(P,vp,t);
+    if(u_theme<0.999)light=ditherInk(P,t);
     col=mix(light,dark,u_theme);
   }
 
   /* Grano fijo (no parpadea) para que no se vea plástico. */
-  col+=(hash(frag)-0.5)*mix(0.02,0.035,u_theme);
+  col+=(hash(gl_FragCoord.xy)-0.5)*mix(0.02,0.035,u_theme);
   gl_FragColor=vec4(col,1.0);
 }`;
 
@@ -226,6 +233,7 @@ export function HeroShader() {
     const uTheme = gl.getUniformLocation(prog, "u_theme");
     const uScale = gl.getUniformLocation(prog, "u_scale");
     const uMobile = gl.getUniformLocation(prog, "u_mobile");
+    const uScroll = gl.getUniformLocation(prog, "u_scroll");
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scale = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -257,6 +265,7 @@ export function HeroShader() {
       gl.uniform1f(uTheme, themeMix);
       gl.uniform1f(uScale, scale);
       gl.uniform1f(uMobile, mobile);
+      gl.uniform1f(uScroll, window.scrollY);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       canvas.dataset.ready = "";
     };
@@ -284,20 +293,16 @@ export function HeroShader() {
     });
     ro.observe(canvas);
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        visible = Boolean(entries[0]?.isIntersecting) && !document.hidden;
-        kick();
-      },
-      { threshold: 0 },
-    );
-    io.observe(canvas);
-
     const onVisibility = () => {
       visible = !document.hidden;
       kick();
     };
     document.addEventListener("visibilitychange", onVisibility);
+    /* Con reduced-motion no hay loop: el patrón se redibuja al scrollear. */
+    const onScroll = () => {
+      if (reduced) kick();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     kick();
 
@@ -305,11 +310,11 @@ export function HeroShader() {
       kickRef.current = () => undefined;
       if (raf) cancelAnimationFrame(raf);
       ro.disconnect();
-      io.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("scroll", onScroll);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
     };
   }, []);
 
-  return <canvas ref={ref} className="hero-gl" aria-hidden="true" />;
+  return <canvas ref={ref} className="page-bg" aria-hidden="true" />;
 }

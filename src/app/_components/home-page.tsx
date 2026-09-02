@@ -5,7 +5,6 @@ import { useState } from "react";
 import { Badge, Icon } from "~/components/geist";
 import { ButtonLink } from "~/components/site/button-link";
 import { HeroShader } from "~/components/site/hero-shader";
-import { HomeField } from "~/components/site/home-field";
 import { NicheCard } from "~/components/site/niche-card";
 import { usePrefs } from "~/components/site/prefs";
 import { ProjectRow } from "~/components/site/project-bits";
@@ -33,11 +32,10 @@ export function HomePage({
 
   return (
     <div>
-      {/* ---- Profundidad de campo (WebGPU via vgpu; fallback WebGL) ---- */}
-      <HomeField />
-      {/* ---- Hero (dirección A: editorial) sobre el shader de luz ---- */}
+      {/* ---- Campo de luz: fijo detrás de toda la página, pleno en el hero ---- */}
+      <HeroShader />
+      {/* ---- Hero (dirección A: editorial) ---- */}
       <div className="hero-wrap">
-        <HeroShader />
         <header className="hero hero--a">
           <div className="hero__left">
             <Badge color="green" dot>
