@@ -1,4 +1,4 @@
-import { fromDbDate } from "../../lib/panel/logical-date.ts";
+import { CUTOFF_HOUR, PANEL_TZ, fromDbDate } from "../../lib/panel/logical-date.ts";
 import type { PrismaClient } from "../../../generated/prisma";
 
 /**
@@ -61,8 +61,10 @@ export async function buildExport(db: PrismaClient): Promise<PanelExport> {
     meta: {
       exportedAt: new Date().toISOString(),
       formatVersion: 1,
-      timezone: "America/Argentina/Buenos_Aires",
-      cutoffHour: 5,
+      // Del módulo de tiempo, no hardcodeados: si el corte cambiara, un
+      // backup viejo tiene que seguir diciendo con qué corte se generó.
+      timezone: PANEL_TZ,
+      cutoffHour: CUTOFF_HOUR,
       counts: {
         metric: metrics.length,
         event: events.length,

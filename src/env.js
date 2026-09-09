@@ -25,6 +25,8 @@ export const env = createEnv({
      * en src/server/panel/config.ts.
      */
     PANEL_ENABLED: z.string().optional(),
+    /** Secreto del webhook de GitHub. Mismo criterio: string opcional. */
+    GITHUB_WEBHOOK_SECRET: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -50,6 +52,7 @@ export const env = createEnv({
     DIRECT_URL: process.env.DIRECT_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
     PANEL_ENABLED: process.env.PANEL_ENABLED,
+    GITHUB_WEBHOOK_SECRET: process.env.GITHUB_WEBHOOK_SECRET,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
