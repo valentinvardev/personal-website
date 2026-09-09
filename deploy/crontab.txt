@@ -1,0 +1,39 @@
+# Cron del panel de medición, para el VPS.
+#
+# Instalar con:  crontab -e   (y pegar la línea de abajo)
+# Verificar con: crontab -l
+#
+# ---------------------------------------------------------------------------
+# Por qué la hora está en UTC y no se usa CRON_TZ
+# ---------------------------------------------------------------------------
+# El día lógico corta a las 5:00 de Buenos Aires, así que el rollup tiene que
+# correr DESPUÉS de esa hora: a medianoche estaría consolidando un día todavía
+# abierto y nadie se enteraría, porque el resultado sería plausible.
+#
+# 08:30 UTC = 05:30 America/Argentina/Buenos_Aires (UTC-3), media hora después
+# del corte. NO se usa CRON_TZ: si el daemon lo ignora (varía según la
+# distribución), el job correría tres horas antes y el error sería invisible.
+# Buenos Aires no tiene horario de verano desde 2010, así que el offset es fijo.
+#
+# ---------------------------------------------------------------------------
+# Por qué cada pedazo de la línea está ahí
+# ---------------------------------------------------------------------------
+#   cd ...            el CLI resuelve rutas relativas al repo
+#   mkdir -p logs     `logs/` está en .gitignore, así que en un clone limpio no
+#                     existe y la redirección fallaría ANTES de ejecutar nada:
+#                     el síntoma sería "no hay datos" sin un solo error visible
+#   flock -n          si una corrida anterior quedó colgada, la siguiente no se
+#                     superpone contra la misma base
+#   $(which node)     si Node está por nvm, /usr/bin/node no existe
+#   --env-file=.env   el CLI necesita DIRECT_URL
+#   --catchup         recupera los días que falten si el VPS estuvo caído, y
+#                     recomputa los últimos 2 por si hubo carga retrospectiva
+#   >> ... 2>&1       todo al log, incluido el stderr
+
+SHELL=/bin/bash
+
+30 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-rollup.lock $(which node) --env-file=.env scripts/panel-job.ts rollup --catchup >> logs/panel.log 2>&1
+
+# Conviene además rotar logs/panel.log: el proceso de Next ya escribe a
+# logs/out.log sin rotación. Un /etc/logrotate.d/valentinvarela con
+# "weekly, rotate 8, compress, missingok, notifempty" alcanza.
