@@ -8,8 +8,10 @@ import {
   SLEEP_WINDOW_START_HOUR,
 } from "~/lib/panel/format";
 import {
+  CUTOFF_HOUR,
   addDays,
   logicalDayBounds,
+  parseLogicalDate,
   type LogicalDate,
 } from "~/lib/panel/logical-date";
 import { db } from "~/server/db";
@@ -42,8 +44,26 @@ export const MOOD_ANCHORS = ["Mal", "Bajo", "Neutro", "Bien", "Muy bien"] as con
 export const checkinInput = z.object({
   /** Día lógico al que pertenece este check-in, calculado en el servidor. */
   logicalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  /** Hábitos cumplidos, por `key` de la métrica. */
-  habits: z.array(z.string().min(1).max(80)).max(20).default([]),
+  /**
+   * Hábitos cumplidos.
+   *
+   * `amount` es la cantidad real para los hábitos que se miden en minutos o
+   * en unidades. Sin él, marcar "Leer" (target 30) escribiría `value: 1`,
+   * `bucket.ts` compararía `1 >= 30` y el sistema te diría que fallaste
+   * justo el día que cumpliste: la peor forma del principio 2 de la spec.
+   *
+   * `null` significa "lo hice pero no sé cuánto": vale como cumplido y el
+   * total queda desconocido, en vez de inventar la cantidad del target.
+   */
+  habits: z
+    .array(
+      z.object({
+        key: z.string().min(1).max(80),
+        amount: z.number().min(0).max(100_000).nullable().default(null),
+      }),
+    )
+    .max(20)
+    .default([]),
   /**
    * Sueño en slots de la ventana (0..79). `null` = no se registró.
    * El servidor recalcula la duración desde los extremos: nunca se confía en
@@ -81,7 +101,7 @@ export function sleepWindowStart(ld: LogicalDate): Date {
   // suma en milisegundos es exacta; si algún día lo tuviera, este es el
   // único punto a revisar.
   const previous = logicalDayBounds(addDays(ld, -1)).startUtc;
-  const hoursFromCutoff = SLEEP_WINDOW_START_HOUR - 5;
+  const hoursFromCutoff = SLEEP_WINDOW_START_HOUR - CUTOFF_HOUR;
   return new Date(previous.getTime() + hoursFromCutoff * 3_600_000);
 }
 
@@ -105,7 +125,10 @@ function slotToInstant(windowStart: Date, slot: number): Date {
  * Reenviar el mismo check-in ACTUALIZA la fila; no crea una segunda.
  */
 export async function saveCheckin(input: CheckinInput): Promise<{ written: number }> {
-  const ld = input.logicalDate as LogicalDate;
+  // parseLogicalDate, no un cast: el cast anula el tipo branded que existe
+  // justo para esto, y deja pasar "2026-02-31", que Date.UTC normaliza en
+  // silencio a marzo.
+  const ld = parseLogicalDate(input.logicalDate);
   const now = new Date();
   const windowStart = sleepWindowStart(ld);
 
@@ -169,6 +192,12 @@ export async function saveCheckin(input: CheckinInput): Promise<{ written: numbe
         endAt: endAt.toISOString(),
         midpointAt: midpointAt.toISOString(),
         precisionMinutes: SLEEP_SLOT_MINUTES,
+        // El dia al que pertenece este sueno. occurredAt guarda el instante
+        // real de inicio (dato crudo, spec 5.1), pero la ventana de sueno
+        // cruza el corte de las 5 AM: sin esto, acostarse a las 23:00 lo
+        // atribuye al dia anterior y acostarse a las 6:00 al mismo dia, y
+        // dos noches podrian caer juntas y sumarse en una de 15 horas.
+        logicalDate: ld,
       },
     });
   }
@@ -195,21 +224,38 @@ export async function saveCheckin(input: CheckinInput): Promise<{ written: numbe
   }
 
   // --- Hábitos -------------------------------------------------------------
-  for (const key of input.habits) {
+  for (const h of input.habits) {
     writes.push({
       type: "habit.check",
-      externalId: `checkin:${ld}:${key}`,
-      subjectId: metricSubject(key),
+      externalId: `checkin:${ld}:${h.key}`,
+      subjectId: metricSubject(h.key),
       occurredAt: middayOfDay,
-      value: 1,
-      meta: { formVersion: FORM_VERSION },
+      // La cantidad real si la dijiste; null si solo lo marcaste. Nunca el
+      // target: eso seria inventar un dato que no medimos.
+      value: h.amount,
+      meta: { formVersion: FORM_VERSION, amountGiven: h.amount !== null },
     });
   }
 
-  // Upsert por (sourceKey, externalId): corregir el check-in del mismo día
-  // actualiza las filas en vez de duplicarlas.
-  await db.$transaction(
-    writes.map((w) =>
+  // Todo lo que este envío deja escrito para el día. Lo que no esté acá y
+  // exista en la base se borra: es cómo se desmarca un hábito o se borra una
+  // respuesta.
+  //
+  // Esto es seguro SOLO porque el formulario precarga lo que ya está guardado
+  // (`loadCheckin`). Sin esa precarga, entrar a la tarde solo a marcar un
+  // hábito borraría el sueño y las escalas de la mañana.
+  const keep = writes.map((w) => w.externalId);
+
+  await db.$transaction([
+    // Dentro de la transacción, no después: si el proceso muere en el medio,
+    // no puede quedar un día a medio borrar.
+    db.panelEvent.deleteMany({
+      where: {
+        sourceKey: "manual",
+        externalId: { startsWith: `checkin:${ld}:`, notIn: keep },
+      },
+    }),
+    ...writes.map((w) =>
       db.panelEvent.upsert({
         where: { sourceKey_externalId: { sourceKey: "manual", externalId: w.externalId } },
         create: {
@@ -232,18 +278,58 @@ export async function saveCheckin(input: CheckinInput): Promise<{ written: numbe
         },
       }),
     ),
-  );
-
-  // Un hábito desmarcado en una corrección tiene que DESAPARECER, no quedar
-  // con value 1 de la carga anterior.
-  const keptHabitIds = input.habits.map((k) => `checkin:${ld}:${k}`);
-  await db.panelEvent.deleteMany({
-    where: {
-      sourceKey: "manual",
-      type: "habit.check",
-      externalId: { startsWith: `checkin:${ld}:`, notIn: keptHabitIds },
-    },
-  });
+  ]);
 
   return { written: writes.length };
+}
+
+/**
+ * Lo que ya está guardado del check-in de un día, para precargar el formulario.
+ *
+ * La spec §5.2 prohíbe mostrar la respuesta de AYER, porque el anclaje es real
+ * y comprime la variabilidad. No prohíbe mostrar la de HOY: sin eso, entrar a
+ * la tarde a corregir una cosa borra todo lo demás, y los botones "Borrar" de
+ * la UI prometen una acción que el backend no puede ejecutar.
+ *
+ * Por eso esta función es explícita y se llama solo con el día en curso.
+ */
+export async function loadCheckin(ld: LogicalDate): Promise<{
+  habits: { key: string; amount: number | null }[];
+  sleep: { startSlot: number; endSlot: number } | null;
+  energy: number | null;
+  mood: number | null;
+  exists: boolean;
+}> {
+  const rows = await db.panelEvent.findMany({
+    where: { sourceKey: "manual", externalId: { startsWith: `checkin:${ld}` } },
+    select: { externalId: true, type: true, value: true, meta: true },
+  });
+
+  const habits: { key: string; amount: number | null }[] = [];
+  let sleep: { startSlot: number; endSlot: number } | null = null;
+  let energy: number | null = null;
+  let mood: number | null = null;
+  let exists = false;
+
+  const windowStart = sleepWindowStart(ld).getTime();
+  for (const r of rows) {
+    if (r.externalId === `checkin:${ld}`) {
+      exists = true;
+      continue;
+    }
+    const key = r.externalId.slice(`checkin:${ld}:`.length);
+    if (r.type === "habit.check") habits.push({ key, amount: r.value });
+    else if (r.type === "scale.energy") energy = r.value;
+    else if (r.type === "scale.mood") mood = r.value;
+    else if (r.type === "sleep.segment") {
+      const meta = r.meta as { startAt?: unknown; endAt?: unknown } | null;
+      if (typeof meta?.startAt === "string" && typeof meta?.endAt === "string") {
+        const toSlot = (iso: string): number =>
+          Math.round((new Date(iso).getTime() - windowStart) / (SLEEP_SLOT_MINUTES * 60_000));
+        sleep = { startSlot: toSlot(meta.startAt), endSlot: toSlot(meta.endAt) };
+      }
+    }
+  }
+
+  return { habits, sleep, energy, mood, exists };
 }

@@ -1227,3 +1227,19 @@ h1, h2, h3, h4 { margin: 0; }
   .row { flex-wrap: wrap; }
   .row__name { flex-basis: 100%; }
 }
+
+/* Hábitos con cantidad: el toggle y el número conviven en la misma tarjeta. */
+.ci-habit { display: flex; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+.ci-habit__toggle { flex: 1; display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; cursor: pointer; padding: 14px 16px; appearance: none; background: none; border: none;
+  color: inherit; font: var(--ds-label-14); text-align: left; }
+.ci-habit__amount { display: flex; align-items: center; gap: 4px; padding: 0 12px 0 4px;
+  border-left: 1px solid var(--ds-gray-alpha-400); }
+.ci-habit__amount input { width: 56px; padding: 6px 4px; text-align: right; appearance: textfield;
+  background: none; border: none; color: inherit; font: var(--ds-label-14);
+  font-variant-numeric: tabular-nums; }
+.ci-habit__amount input:focus-visible { outline: 2px solid var(--ds-blue-700); outline-offset: 2px;
+  border-radius: var(--ds-radius-sm); }
+.ci-habit__amount span { font: var(--ds-label-12-mono); opacity: .6; }
+.ci-habit.is-on .ci-habit__amount { border-left-color: var(--ds-gray-alpha-500); }
+.sleep__problem { font: var(--ds-copy-13); color: var(--ds-red-700); margin-top: 10px; }

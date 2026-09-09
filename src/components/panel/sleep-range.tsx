@@ -2,6 +2,8 @@
 
 import { useCallback, useRef, useState } from "react";
 
+import { SLEEP_WINDOW_START_HOUR } from "~/lib/panel/format";
+
 export interface SleepValue {
   startSlot: number;
   endSlot: number;
@@ -52,6 +54,7 @@ export function SleepRange({
   labelFor,
   durationLabel,
 }: Props) {
+  const windowStartHour = SLEEP_WINDOW_START_HOUR;
   const trackRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ anchor: number; moved: boolean } | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -112,22 +115,53 @@ export function SleepRange({
     const minutesOfDay = Number(m[1]) * 60 + Number(m[2]);
     // La ventana arranca a las 18:00; todo lo anterior pertenece al día
     // siguiente dentro de la misma ventana.
-    const fromStart = (minutesOfDay - 18 * 60 + 1440) % 1440;
+    const fromStart = (minutesOfDay - windowStartHour * 60 + 1440) % 1440;
     const slot = Math.round(fromStart / slotMinutes);
     return slot >= 0 && slot <= slots ? slot : null;
   };
 
   const slotToTime = (slot: number): string => labelFor(slot * slotMinutes);
 
+  /**
+   * Los dos campos de hora necesitan estado PARCIAL propio.
+   *
+   * Con la versión anterior, arrancando desde vacío (que es el estado
+   * obligatorio de todo check-in nuevo por la regla de "sin posición por
+   * defecto"), poner un extremo daba un segmento de largo cero, la guarda
+   * `endSlot > startSlot` lo descartaba, el padre seguía en null y el segundo
+   * campo fallaba por lo mismo. Resultado medido: 0 de 3240 pares de horas
+   * válidos lograban registrar sueño. La vía accesible estaba muerta.
+   */
+  const [draft, setDraft] = useState<{ start?: number; end?: number }>({});
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const startText = value ? slotToTime(value.startSlot) : draft.start !== undefined ? slotToTime(draft.start) : "";
+  const endText = value ? slotToTime(value.endSlot) : draft.end !== undefined ? slotToTime(draft.end) : "";
+
   const setEdge = (edge: "start" | "end", time: string) => {
+    if (time === "") {
+      setDraft((d) => ({ ...d, [edge]: undefined }));
+      return;
+    }
     const slot = timeToSlot(time);
-    if (slot === null) return;
-    const current = value ?? { startSlot: slot, endSlot: slot };
-    const next =
-      edge === "start"
-        ? { startSlot: slot, endSlot: current.endSlot }
-        : { startSlot: current.startSlot, endSlot: slot };
-    if (next.endSlot > next.startSlot) onChange(next);
+    if (slot === null) {
+      // Antes esto era un `return` mudo y la hora tipeada se borraba sin
+      // decir por qué.
+      setProblem(`La línea de tiempo va de ${slotToTime(0)} a ${slotToTime(slots)}`);
+      return;
+    }
+    setProblem(null);
+    const next = {
+      start: edge === "start" ? slot : (value?.startSlot ?? draft.start),
+      end: edge === "end" ? slot : (value?.endSlot ?? draft.end),
+    };
+    setDraft(next);
+    if (next.start === undefined || next.end === undefined) return;
+    if (next.end <= next.start) {
+      setProblem("El despertar tiene que ser después de dormirse");
+      return;
+    }
+    onChange({ startSlot: next.start, endSlot: next.end });
   };
 
   const pct = (slot: number) => (slot / slots) * 100;
@@ -153,7 +187,7 @@ export function SleepRange({
           )}
         </span>
         {value && (
-          <button type="button" className="sleep__clear" onClick={() => onChange(null)}>
+          <button type="button" className="sleep__clear" onClick={() => { setDraft({}); setProblem(null); onChange(null); }}>
             Borrar
           </button>
         )}
@@ -191,7 +225,7 @@ export function SleepRange({
           <input
             type="time"
             step={slotMinutes * 60}
-            value={value ? slotToTime(value.startSlot) : ""}
+            value={startText}
             onChange={(e) => setEdge("start", e.target.value)}
           />
         </label>
@@ -200,11 +234,12 @@ export function SleepRange({
           <input
             type="time"
             step={slotMinutes * 60}
-            value={value ? slotToTime(value.endSlot) : ""}
+            value={endText}
             onChange={(e) => setEdge("end", e.target.value)}
           />
         </label>
       </div>
+      {problem && <p className="sleep__problem">{problem}</p>}
     </div>
   );
 }

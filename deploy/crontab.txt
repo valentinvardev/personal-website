@@ -24,15 +24,36 @@
 #                     el síntoma sería "no hay datos" sin un solo error visible
 #   flock -n          si una corrida anterior quedó colgada, la siguiente no se
 #                     superpone contra la misma base
-#   $(which node)     si Node está por nvm, /usr/bin/node no existe
 #   --env-file=.env   el CLI necesita DIRECT_URL
 #   --catchup         recupera los días que falten si el VPS estuvo caído, y
 #                     recomputa los últimos 2 por si hubo carga retrospectiva
 #   >> ... 2>&1       todo al log, incluido el stderr
-
+#
+# ---------------------------------------------------------------------------
+# PATH explícito: es obligatorio, no cosmético
+# ---------------------------------------------------------------------------
+# cron corre con PATH=/usr/bin:/bin y bash no interactivo NO lee ~/.profile, así
+# que si Node vino por nvm no está en el PATH. Un `$(which node)` ahí devuelve
+# vacío y la línea colapsa en `flock -n /tmp/... --env-file=.env ...`, que muere
+# con exit 127 antes de ejecutar nada. Y como el proceso nunca arranca, no queda
+# ni una fila en JobRun: la bitácora que existe justo para detectar "el cron
+# dejó de andar" es ciega a este fallo.
+#
+# Verificá tu ruta con `which node` en una sesión SSH y poné ESA en el PATH:
+PATH=/home/photoplatform/.nvm/versions/node/v22.18.0/bin:/usr/local/bin:/usr/bin:/bin
 SHELL=/bin/bash
 
-30 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-rollup.lock $(which node) --env-file=.env scripts/panel-job.ts rollup --catchup >> logs/panel.log 2>&1
+# Rollup diario.
+30 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-rollup.lock node --env-file=.env scripts/panel-job.ts rollup --catchup >> logs/panel.log 2>&1
+
+# Reprocesa entregas de webhook que quedaron colgadas. GitHub no reintenta las
+# entregas fallidas de un webhook de repositorio, así que sin esto un fallo del
+# procesamiento en background hace desaparecer commits para siempre.
+40 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-inbox.lock node --env-file=.env scripts/panel-job.ts inbox >> logs/panel.log 2>&1
+
+# Backup semanal, los domingos. El README y panel-export.ts sostienen que el
+# backup de verdad es el CLI: acá es donde eso se vuelve cierto.
+0 9 * * 0 cd /home/photoplatform/valentinvarela && mkdir -p logs && node --env-file=.env scripts/panel-export.ts >> logs/panel.log 2>&1 && find backups -name 'panel-*.json' -mtime +60 -delete
 
 # Conviene además rotar logs/panel.log: el proceso de Next ya escribe a
 # logs/out.log sin rotación. Un /etc/logrotate.d/valentinvarela con

@@ -56,12 +56,35 @@ export interface RollupRow {
   hit: boolean | null;
 }
 
+export interface BucketOptions {
+  excludedDays?: ReadonlySet<string>;
+  /**
+   * El día en curso. NO recibe filas de ausencia: todavía no terminó, así que
+   * "no lo hiciste" es falso, es "todavía no". Sin esto, a las 05:01 el
+   * dashboard te muestra 0% en rojo por hábitos que pensabas hacer a la
+   * tarde, y el heatmap pinta hoy como "nada cumplido" en vez de "sin datos".
+   */
+  openDay?: LogicalDate | null;
+  /**
+   * Primer día en que el sistema estuvo realmente en uso. Antes de eso no se
+   * evalúa nada, aunque las definiciones ya existieran.
+   *
+   * Hace falta porque `createdAt` de la métrica es cuándo se sembró la
+   * definición, no cuándo empezaste a usar el panel: sembrar hoy y prender el
+   * panel dentro de tres semanas generaría, con `rollup --all`, tres semanas
+   * de días fallados sobre un panel que devolvía 404. Y esas filas son
+   * pegajosas: un rebuild posterior con la ventana correcta no las toca.
+   */
+  systemStart?: LogicalDate | null;
+}
+
 export function bucketEvents(
   events: readonly BucketEvent[],
   metrics: readonly BucketMetric[],
   days: readonly LogicalDate[],
-  excludedDays: ReadonlySet<string> = new Set(),
+  opts: BucketOptions = {},
 ): RollupRow[] {
+  const excludedDays = opts.excludedDays ?? new Set<string>();
   const activeDays = days.filter((d) => !excludedDays.has(d));
   const dayIndex = new Set<string>(activeDays);
 
@@ -99,7 +122,12 @@ export function bucketEvents(
     // Regla 4: tipos mezclados en el mismo sujeto y día -> el total no es
     // sumable. Se registra el conteo y se deja el total en null en vez de
     // inventar un número.
-    const total = a.types.size > 1 ? null : a.withValue > 0 ? a.sum : null;
+    //
+    // Y lo mismo con más de un evento de un sujeto de check-in: dos noches de
+    // sueño en el mismo día no son una noche de 15 horas. Los hábitos SÍ se
+    // suman (tres sesiones de lectura de 20 minutos son una hora).
+    const ambiguo = a.types.size > 1 || (metric?.scored === false && a.count > 1);
+    const total = ambiguo ? null : a.withValue > 0 ? a.sum : null;
 
     const scored = metric?.scored ?? false;
     const target = scored ? (metric?.targetValue ?? null) : null;
@@ -118,6 +146,8 @@ export function bucketEvents(
     if (!m.scored) continue; // regla 2
     const subjectId = `metric:${m.key}`;
     for (const day of activeDays) {
+      if (day === opts.openDay) continue; // el día no terminó: no se juzga
+      if (opts.systemStart && day < opts.systemStart) continue; // panel apagado
       if (day < m.activeFrom) continue; // la definición todavía no existía
       if (m.activeTo !== null && day > m.activeTo) continue; // ya archivada
       if (acc.has(`${subjectId}|${day}`)) continue; // ya tiene fila

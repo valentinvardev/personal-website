@@ -2,6 +2,7 @@ import { nightLabel, longDayLabel } from "~/lib/panel/format";
 import { todayLogical } from "~/lib/panel/logical-date";
 import { db } from "~/server/db";
 import { requirePanel } from "~/server/panel/auth";
+import { loadCheckin } from "~/server/panel/checkin";
 import { CheckinForm } from "./_components/checkin-form";
 
 export default async function CheckinPage() {
@@ -13,11 +14,16 @@ export default async function CheckinPage() {
   // comería el spinner en vez del gesto.
   const today = todayLogical();
 
-  const metrics = await db.panelMetric.findMany({
-    where: { archivedAt: null },
-    orderBy: [{ sortOrder: "asc" }, { key: "asc" }],
-    select: { key: true, name: true, kind: true, unit: true, targetValue: true },
-  });
+  const [metrics, initial] = await Promise.all([
+    db.panelMetric.findMany({
+      where: { archivedAt: null },
+      orderBy: [{ sortOrder: "asc" }, { key: "asc" }],
+      select: { key: true, name: true, kind: true, unit: true, targetValue: true },
+    }),
+    // Lo ya guardado de HOY. Sin esto, corregir una cosa a la tarde borraba
+    // todo lo demás del día.
+    loadCheckin(today),
+  ]);
 
   return (
     <CheckinForm
@@ -25,6 +31,7 @@ export default async function CheckinPage() {
       dayLabel={longDayLabel(today)}
       nightLabel={nightLabel(today)}
       habits={metrics.filter((m) => m.kind === "habit")}
+      initial={initial}
     />
   );
 }

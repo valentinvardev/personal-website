@@ -79,7 +79,7 @@ test("un sujeto no puntuado con evento no lleva ni target ni hit", () => {
 });
 
 test("un día excluido no genera ninguna fila: sale del denominador", () => {
-  const rows = bucketEvents([], [leer], DAYS, new Set(["2026-09-02"]));
+  const rows = bucketEvents([], [leer], DAYS, { excludedDays: new Set(["2026-09-02"]) });
   assert.equal(rows.length, 2);
   assert.ok(!rows.some((r) => r.logicalDate === "2026-09-02"));
 });
@@ -135,4 +135,58 @@ test("es determinista: mismo input, mismo output", () => {
   const a = bucketEvents(events, [leer, animo], DAYS);
   const b = bucketEvents(events, [leer, animo], DAYS);
   assert.deepEqual(a, b);
+});
+
+test("el día en curso NO genera fila de ausencia: todavía no terminó", () => {
+  const rows = bucketEvents([], [leer], DAYS, { openDay: ld("2026-09-03") });
+  assert.equal(rows.length, 2, "solo los dos días cerrados");
+  assert.ok(!rows.some((r) => r.logicalDate === "2026-09-03"));
+  // Sin esto, a las 05:01 el dashboard muestra 0% en rojo por hábitos que
+  // pensabas hacer a la tarde.
+});
+
+test("el día en curso SÍ genera fila si tiene eventos", () => {
+  const rows = bucketEvents(
+    [ev("metric:read.minutes", "2026-09-03", 45)],
+    [leer],
+    DAYS,
+    { openDay: ld("2026-09-03") },
+  );
+  const hoy = rows.find((r) => r.logicalDate === "2026-09-03");
+  assert.equal(hoy?.hit, true, "lo que ya hiciste hoy cuenta");
+});
+
+test("antes del arranque del sistema no se evalúa nada", () => {
+  const rows = bucketEvents([], [leer], DAYS, { systemStart: ld("2026-09-03") });
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0]?.logicalDate, "2026-09-03");
+  // Evita que `rollup --all` fabrique semanas de días fallados sobre un panel
+  // que todavía devolvía 404.
+});
+
+test("dos noches de sueño el mismo día no se suman en una de 15 horas", () => {
+  const rows = bucketEvents(
+    [
+      ev("metric:mood", "2026-09-01", 420, "sleep.segment"),
+      ev("metric:mood", "2026-09-01", 480, "sleep.segment"),
+    ],
+    [animo],
+    DAYS,
+  );
+  assert.equal(rows[0]?.count, 2);
+  assert.equal(rows[0]?.total, null, "dos noches no son una noche larga");
+});
+
+test("varias sesiones de un hábito SÍ se suman", () => {
+  const rows = bucketEvents(
+    [
+      ev("metric:read.minutes", "2026-09-01", 20),
+      ev("metric:read.minutes", "2026-09-01", 20),
+    ],
+    [leer],
+    DAYS,
+  );
+  const d = rows.find((r) => r.logicalDate === "2026-09-01");
+  assert.equal(d?.total, 40, "tres sesiones de 20 minutos sí son una hora");
+  assert.equal(d?.hit, true);
 });

@@ -99,11 +99,7 @@ export default async function PanelHome() {
         </section>
       )}
 
-      <p className="panel-fresh">
-        {o.freshness.lastRunAt
-          ? `Rollup: ${o.freshness.ok ? "ok" : "con error"}. Hoy se calcula en vivo.`
-          : "El rollup todavía no corrió. Hoy se calcula en vivo igual."}
-      </p>
+      <p className="panel-fresh">{freshnessLabel(o.freshness)}</p>
     </div>
   );
 }
@@ -122,9 +118,28 @@ function Stat({ label, result }: { label: string; result: MetricResult }) {
 /** Umbrales de la spec §4: >80% verde, 50-80% amarillo, <50% mal diseñado. */
 function barClass(r: MetricResult): string {
   if (r.value === null) return "num num--none";
+  // Con muestra chica no hay semaforo. Un habito de un dia al 100% no es el
+  // mismo verde que uno con 28 dias, y uno recien sembrado sin marcar saldria
+  // rojo con n 1, que es el color que la spec reserva para "el habito esta
+  // mal disenado". La primera semana es justo cuando decidis si el sistema sirve.
+  if (r.n < 7) return "num num--none";
   if (r.value > 0.8) return "num num--good";
   if (r.value >= 0.5) return "num num--mid";
   return "num num--low";
+}
+
+/**
+ * "Rollup: ok" sin fecha sigue diciendo ok el viernes aunque el cron haya
+ * muerto el martes, y como los dias sin fila salen del denominador el
+ * porcentaje casi no se mueve: lo unico que encoge es el n.
+ */
+function freshnessLabel(f: { lastRunAt: Date | null; ok: boolean | null; staleDays: number | null }): string {
+  if (!f.lastRunAt) return "El rollup todavía no corrió. Hoy se calcula en vivo igual.";
+  const d = f.staleDays ?? 0;
+  const cuando = d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`;
+  if (!f.ok) return `Rollup: falló (${cuando}). Los días cerrados pueden estar desactualizados.`;
+  if (d >= 2) return `Rollup: última corrida ${cuando}. El cron puede estar caído.`;
+  return `Rollup: ok (${cuando}). Hoy se calcula en vivo.`;
 }
 
 function formatLast(v: number | null, unit: string): string {

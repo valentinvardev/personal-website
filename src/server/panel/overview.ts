@@ -1,6 +1,7 @@
 import { bucketEvents, type BucketEvent, type BucketMetric } from "../../lib/panel/bucket.ts";
 import {
   addDays,
+  diffDays,
   fromDbDate,
   logicalDate,
   logicalDayBounds,
@@ -11,6 +12,7 @@ import {
   type LogicalDate,
 } from "../../lib/panel/logical-date.ts";
 import { adherence, completeness, type MetricResult } from "../../lib/panel/metrics.ts";
+import { dayOfEvent, systemStartDay } from "./rollup.ts";
 import type { PrismaClient } from "../../../generated/prisma";
 
 /**
@@ -61,7 +63,7 @@ export interface HeatDay {
 
 export interface Overview {
   today: LogicalDate;
-  freshness: { lastRunAt: Date | null; ok: boolean | null };
+  freshness: { lastRunAt: Date | null; ok: boolean | null; staleDays: number | null };
   adherence28: MetricResult;
   completeness28: MetricResult;
   habits: HabitCard[];
@@ -80,10 +82,13 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
   const windowFrom = addDays(today, -(WINDOW_DAYS - 1));
   const heatFrom = addDays(today, -(HEATMAP_DAYS - 1));
 
-  const todayBounds = logicalDayBounds(today);
+  // Un día a cada lado: el sueño de hoy empieza anoche (su occurredAt cae en
+  // el día lógico anterior) pero pertenece a hoy vía meta.logicalDate.
+  // bucketEvents descarta después lo que no sea de hoy.
+  const todayBounds = logicalRangeBounds(addDays(today, -1), addDays(today, 1));
   const checkinBounds = logicalRangeBounds(windowFrom, today);
 
-  const [metrics, rollups, todayEvents, checkinHeaders, lastRun, excluded] = await Promise.all([
+  const [metrics, rollups, todayEvents, checkinHeaders, lastRun, excluded, systemStart] = await Promise.all([
     db.panelMetric.findMany({
       where: { archivedAt: null },
       orderBy: [{ sortOrder: "asc" }, { key: "asc" }],
@@ -108,14 +113,21 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
         occurredAt: { gte: todayBounds.startUtc, lt: todayBounds.endUtc },
         subjectId: { not: null },
       },
-      select: { subjectId: true, type: true, occurredAt: true, value: true },
+      select: {
+        subjectId: true,
+        type: true,
+        externalId: true,
+        occurredAt: true,
+        value: true,
+        meta: true,
+      },
     }),
     db.panelEvent.findMany({
       where: {
         type: "checkin.submitted",
         occurredAt: { gte: checkinBounds.startUtc, lt: checkinBounds.endUtc },
       },
-      select: { occurredAt: true },
+      select: { externalId: true },
     }),
     db.panelJobRun.findFirst({
       where: { job: "rollup", finishedAt: { not: null } },
@@ -126,6 +138,7 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
       where: { logicalDate: { gte: toDbDate(heatFrom), lte: toDbDate(today) } },
       select: { logicalDate: true },
     }),
+    systemStartDay(db),
   ]);
 
   const excludedDays = new Set(excluded.map((e) => fromDbDate(e.logicalDate) as string));
@@ -144,13 +157,13 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
     activeFrom: logicalDate(m.createdAt),
     activeTo: m.archivedAt ? logicalDate(m.archivedAt) : null,
   }));
-  const bucketed: BucketEvent[] = todayEvents.map((e) => ({
-    subjectId: e.subjectId!,
-    type: e.type,
-    logicalDate: logicalDate(e.occurredAt),
-    value: e.value,
-  }));
-  for (const row of bucketEvents(bucketed, bucketMetrics, [today], excludedDays)) {
+  const bucketed: BucketEvent[] = todayEvents.map(dayOfEvent);
+  // `openDay: today` para que el día en curso no se materialice como fallado:
+  // a las 05:01 no "fallaste" los hábitos que pensabas hacer a la tarde.
+  for (const row of bucketEvents(bucketed, bucketMetrics, [today], {
+    excludedDays,
+    openDay: today,
+  })) {
     cell.set(`${row.subjectId}|${row.logicalDate}`, { total: row.total, hit: row.hit });
   }
 
@@ -167,9 +180,23 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
     }
   }
 
-  const submittedDays = new Set(checkinHeaders.map((e) => logicalDate(e.occurredAt) as string));
+  // El día del check-in sale del externalId ("checkin:<día>"), no de cuándo
+  // se apretó Guardar. Con occurredAt, un check-in guardado a las 05:03 desde
+  // una pestaña abierta desde antes contaría para el día equivocado, y esta
+  // es justo la métrica que la spec §4 usa como umbral de confianza.
+  const submittedDays = new Set(
+    checkinHeaders
+      .map((e) => e.externalId.slice("checkin:".length))
+      .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
+  );
+  // La completitud se mide desde que el sistema existe y sin contar el día en
+  // curso. Con la ventana fija de 28 días, el primer check-in imprimiría
+  // "4% · n 28" al lado de una adherencia con n 3: la misma pantalla
+  // demostrando que una métrica conoce la fecha de nacimiento del sistema y
+  // la otra no, y corrompiendo el `n` que es el mecanismo de auditoría.
   const completenessDays = windowDays
-    .filter((d) => !excludedDays.has(d))
+    .filter((d) => d !== today && !excludedDays.has(d))
+    .filter((d) => !systemStart || d >= systemStart)
     .map((d) => submittedDays.has(d));
 
   // --- Nivel 2 -------------------------------------------------------------
@@ -213,7 +240,13 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
 
   return {
     today,
-    freshness: { lastRunAt: lastRun?.finishedAt ?? null, ok: lastRun?.ok ?? null },
+    freshness: {
+      lastRunAt: lastRun?.finishedAt ?? null,
+      ok: lastRun?.ok ?? null,
+      // Cuántos días hace que no corre. "Rollup: ok" sin fecha sigue diciendo
+      // ok el viernes aunque el cron haya muerto el martes.
+      staleDays: lastRun?.finishedAt ? diffDays(logicalDate(lastRun.finishedAt), today) : null,
+    },
     adherence28: adherence(allHits),
     completeness28: completeness(completenessDays),
     habits,

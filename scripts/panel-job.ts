@@ -49,8 +49,8 @@ function fail(msg: string): never {
 }
 
 const command = process.argv[2];
-if (command !== "rollup") {
-  fail(`comando desconocido: ${command ?? "(ninguno)"}. Uso: panel-job rollup [--last N|--from A --to B|--all|--catchup]`);
+if (command !== "rollup" && command !== "inbox") {
+  fail(`comando desconocido: ${command ?? "(ninguno)"}. Uso: panel-job rollup [--last N|--from A --to B|--all|--catchup] | panel-job inbox`);
 }
 
 const url = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
@@ -115,6 +115,17 @@ async function resolveWindow(): Promise<{ from: LogicalDate; to: LogicalDate }> 
 }
 
 try {
+  if (command === "inbox") {
+    // Reprocesa entregas de webhook que quedaron colgadas. Va junto al rollup
+    // en el cron: sin esto, un fallo del after() deja el commit invisible
+    // para siempre, porque GitHub no reintenta.
+    const { processPendingInbox } = await import("../src/server/panel/github-push.ts");
+    const r = await processPendingInbox(db);
+    console.log(`panel-job inbox: ${r.processed} entregas reprocesadas`);
+    await db.$disconnect();
+    process.exit(0);
+  }
+
   const { from, to } = await resolveWindow();
   const started = Date.now();
   const result = await runRollupJob(db, from, to);

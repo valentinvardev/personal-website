@@ -1,5 +1,3 @@
-import "server-only";
-
 /**
  * `subjectId` con namespace declarado: "metric:<key>" o "repo:<owner>/<name>".
  *

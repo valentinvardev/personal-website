@@ -43,7 +43,20 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Webhook no configurado", { status: 503 });
   }
 
+  // Chequear el tamaño ANTES de leer el cuerpo. nginx permite 60 MB para las
+  // subidas de /admin, y bufferear eso antes de autenticar es un DoS de
+  // memoria trivial contra el proceso que sirve el sitio público: medido, seis
+  // POST concurrentes de 60 MB sin firma llevaron el proceso a 520 MB y
+  // cruzaron el max_memory_restart de pm2.
+  const declared = Number(req.headers.get("content-length") ?? "0");
+  if (declared > MAX_BODY_BYTES) {
+    return new NextResponse("Cuerpo demasiado grande", { status: 413 });
+  }
+
   const raw = Buffer.from(await req.arrayBuffer());
+  if (raw.byteLength > MAX_BODY_BYTES) {
+    return new NextResponse("Cuerpo demasiado grande", { status: 413 });
+  }
 
   if (!verifyGithubSignature(raw, req.headers.get("x-hub-signature-256"), secret)) {
     // Firma inválida: no se guarda NADA. Si no, el endpoint es un buzón
@@ -62,8 +75,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, pong: true });
   }
 
-  const oversize = raw.byteLength > MAX_BODY_BYTES;
-
   let payload: unknown;
   try {
     payload = JSON.parse(raw.toString("utf8"));
@@ -77,22 +88,30 @@ export async function POST(req: NextRequest) {
         id: deliveryId, // idempotente ante el botón Redeliver de GitHub
         source: "github",
         event,
-        payload: oversize ? { truncated: true } : (payload as object),
-        error: oversize ? "oversize" : null,
+        payload: payload as object,
       },
     });
-  } catch {
-    // Ya existía esta entrega: es un reenvío, no hay nada nuevo que guardar.
+  } catch (err) {
+    // Filtrar en POSITIVO por el código de unique violado, no un catch ciego.
+    // Un catch ciego se traga también el timeout del pool (que llega como
+    // PrismaClientInitializationError, no siempre como P2024), responde 202, y
+    // GitHub lee eso como aceptado: la entrega se pierde y no reintenta.
+    const code = (err as { code?: unknown })?.code;
+    if (code !== "P2002") {
+      console.error("[ingest/github] no se pudo guardar la entrega", err);
+      return new NextResponse("No se pudo guardar", { status: 500 });
+    }
+    // Reenvío de una entrega que ya teníamos. Se reprocesa igual: si la vez
+    // anterior falló el parseo, el botón Redeliver tiene que servir para algo.
+    after(async () => {
+      await processInboxEntry(db, deliveryId);
+    });
     return NextResponse.json({ ok: true, duplicate: true }, { status: 202 });
   }
 
-  // Un webhook rechazado por tamaño tiene que ser VISIBLE en el sistema, no
-  // desaparecer con un 413 que solo queda en la UI de GitHub.
-  if (!oversize) {
-    after(async () => {
-      await processInboxEntry(deliveryId);
-    });
-  }
+  after(async () => {
+    await processInboxEntry(db, deliveryId);
+  });
 
   return NextResponse.json({ ok: true }, { status: 202 });
 }

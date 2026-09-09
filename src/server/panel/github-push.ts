@@ -1,7 +1,8 @@
-import "server-only";
-
-import { db } from "~/server/db";
-import { repoSubject } from "./subject";
+// Sin `server-only` y sin el alias `~/`: este módulo lo carga también el CLI
+// del cron con `node` puro, fuera de Next. Por eso `db` viaja como parámetro
+// en vez de importarse.
+import { repoSubject } from "./subject.ts";
+import type { PrismaClient } from "../../../generated/prisma";
 
 /**
  * Convierte un evento `push` de GitHub en filas de `Event`.
@@ -23,7 +24,7 @@ interface PushPayload {
   ref?: string;
 }
 
-export async function processPush(payload: unknown): Promise<{ inserted: number }> {
+export async function processPush(db: PrismaClient, payload: unknown): Promise<{ inserted: number }> {
   const push = payload as PushPayload;
   const repo = push.repository?.full_name;
   if (!repo) return { inserted: 0 };
@@ -70,12 +71,12 @@ export async function processPush(payload: unknown): Promise<{ inserted: number 
  * falla y no queda rastro, el commit desaparece y lo único que lo registra es
  * una UI de GitHub que nadie mira.
  */
-export async function processInboxEntry(deliveryId: string): Promise<void> {
+export async function processInboxEntry(db: PrismaClient, deliveryId: string): Promise<void> {
   const entry = await db.panelInbox.findUnique({ where: { id: deliveryId } });
   if (!entry || entry.processedAt) return;
 
   try {
-    if (entry.event === "push") await processPush(entry.payload);
+    if (entry.event === "push") await processPush(db, entry.payload);
     await db.panelInbox.update({
       where: { id: deliveryId },
       data: { processedAt: new Date(), error: null },
@@ -86,4 +87,23 @@ export async function processInboxEntry(deliveryId: string): Promise<void> {
       data: { error: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500) },
     });
   }
+}
+
+/**
+ * Reprocesa las entregas que quedaron sin procesar.
+ *
+ * Sin esto, una entrega cuyo `after()` falló queda con `processedAt` en null y
+ * nadie la vuelve a mirar nunca: el único llamador era la propia ruta. El
+ * índice `@@index([processedAt])` de `PanelInbox` existe justo para esta query.
+ * Lo corre el cron después del rollup.
+ */
+export async function processPendingInbox(db: PrismaClient, limit = 50): Promise<{ processed: number }> {
+  const pending = await db.panelInbox.findMany({
+    where: { processedAt: null },
+    orderBy: { receivedAt: "asc" },
+    take: limit,
+    select: { id: true },
+  });
+  for (const p of pending) await processInboxEntry(db, p.id);
+  return { processed: pending.length };
 }
