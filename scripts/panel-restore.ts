@@ -93,7 +93,9 @@ try {
 
   console.log(`  insertados: ${m.count} métricas, ${e.count} eventos, ${x.count} días excluidos`);
   console.log(`\n  Ahora recomputá los agregados:`);
-  console.log(`    node --env-file=.env scripts/panel-job.ts rollup --all`);
+  // process.execPath: ver la nota en panel-reset.ts. Un "node" pelado acá es un
+  // comando que falla en la misma máquina que lo imprime.
+  console.log(`    "${process.execPath}" --env-file=.env scripts/panel-job.ts rollup --all`);
 } catch (err) {
   console.error("panel-restore: FALLÓ");
   console.error(err instanceof Error ? err.stack : err);

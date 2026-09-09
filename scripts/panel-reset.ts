@@ -60,7 +60,11 @@ try {
   if (!confirm) {
     console.log("\n  DRY RUN: no se borró nada. Agregá --confirm para aplicar.");
     console.log("  Si querés poder volver atrás, exportá primero:");
-    console.log("    node --env-file=.env scripts/panel-export.ts");
+    // process.execPath y no un "node" pelado: en el VPS el `node` del PATH es
+    // uno viejo que no puede ni parsear este archivo, así que sugerir "node"
+    // sería dar un comando que falla en la misma máquina que lo imprime.
+    // Entrecomillado porque en Windows la ruta trae espacios.
+    console.log(`    "${process.execPath}" --env-file=.env scripts/panel-export.ts`);
     process.exit(0);
   }
 

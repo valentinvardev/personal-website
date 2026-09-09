@@ -228,6 +228,42 @@ Corre **en otro proceso**, con su propio pool de 2 conexiones: el proceso de pm2
 tiene `max_memory_restart: 512M` y un rebuild grande ahí adentro reiniciaría el sitio público.
 
 El dashboard no depende del cron para el día de hoy: ese se calcula al vuelo desde los eventos.
+Y si el cron deja de andar, el panel lo dice con el número de días cerrados sin consolidar
+(`freshness.pendingDays`). Esa cuenta sale de los datos que faltan y no de `JobRun`, así que
+sobrevive a que el proceso muera antes de escribir su propia bitácora.
+
+#### Los CLI necesitan Node 22.6+, y el VPS no lo tiene de fábrica
+
+Los CLI están en TypeScript y se ejecutan sin compilar, con el type-stripping nativo que Node trae
+desde la 22.6. No se reescriben en JavaScript porque comparten módulos con la app, sobre todo
+`src/lib/panel/logical-date.ts`: tener dos copias de la regla del día lógico es justo lo que el
+resto del panel está construido para impedir.
+
+El VPS corre Node 20 del sistema (paquete de NodeSource) y **eso no se toca**: esa máquina aloja
+otras diez apps bajo el mismo pm2. Node 22 vive aparte, en el home del usuario, y solo lo usan los
+CLI:
+
+```bash
+cd ~ && curl -fsSLO https://nodejs.org/dist/v22.23.2/node-v22.23.2-linux-x64.tar.xz \
+  && tar -xf node-v22.23.2-linux-x64.tar.xz \
+  && mv node-v22.23.2-linux-x64 node22 \
+  && rm node-v22.23.2-linux-x64.tar.xz \
+  && ~/node22/bin/node -v          # tiene que decir v22.x
+
+# En el VPS los CLI se invocan con la ruta completa, NO con npm: npm resuelve
+# `node` desde el PATH y ahí está el 20.
+cd ~/valentinvarela && ~/node22/bin/node --env-file=.env scripts/panel-reset.ts
+```
+
+Se deshace con `rm -rf ~/node22`. El sitio sigue sirviéndose con el Node del sistema, igual que antes.
+
+`deploy/crontab.txt` lleva esa ruta completa en cada línea y **no** define un `PATH` global: un
+`PATH=` arriba de un crontab aplica a todas las entradas del archivo, incluidas las de las otras
+apps del mismo usuario, y les cambiaría el intérprete a espaldas de quien las escribió.
+
+Los `npm run panel:*` verifican la versión antes de arrancar (`scripts/require-node22.mjs`), así que
+en un Node viejo dan una frase que explica qué pasa en vez de un `ERR_UNKNOWN_FILE_EXTENSION` con
+un stack de módulos internos de Node.
 
 ### Backup
 
