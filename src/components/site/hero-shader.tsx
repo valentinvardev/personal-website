@@ -288,8 +288,15 @@ export function HeroShader() {
     kickRef.current = kick;
 
     const ro = new ResizeObserver(() => {
+      // Redibujar SIEMPRE, no solo con reduced-motion: asignar canvas.width
+      // borra el buffer de WebGL, y con alpha:false el buffer vacío es negro
+      // OPACO. Sin este draw inmediato el canvas queda negro hasta el próximo
+      // cuadro (hasta 33 ms a 30 fps). Eso es el flash negro al abrir o
+      // cerrar un modal: ocultar la barra de scroll cambia el ancho del
+      // viewport y dispara este observer. En tema oscuro no se nota porque
+      // el fondo ya es casi negro; en tema claro es blanco, negro, blanco.
       resize();
-      if (reduced) draw(performance.now());
+      draw(performance.now());
     });
     ro.observe(canvas);
 

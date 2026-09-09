@@ -209,8 +209,10 @@ export function WritingInk() {
     window.addEventListener("pointerdown", onDown, { passive: true });
 
     const ro = new ResizeObserver(() => {
+      // Ver el comentario en hero-shader.tsx: asignar canvas.width borra el
+      // buffer, y con alpha:false queda negro opaco hasta el próximo cuadro.
       resize();
-      if (reduced) draw(now());
+      draw(now());
     });
     ro.observe(canvas);
     const onVisibility = () => {
