@@ -9,6 +9,10 @@
     "moduleDetection": "force",
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
+    /* Los tests del panel corren con `node --test` sin transpilador, y Node
+       exige la extensión explícita en los imports relativos. Es seguro con
+       noEmit: tsc solo valida, no emite. */
+    "allowImportingTsExtensions": true,
 
     /* Strictness */
     "strict": true,

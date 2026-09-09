@@ -53,9 +53,15 @@ Cada **sección** de un proyecto es un tab del modal "Ver sitio": nombre ES (y E
 | `npm run dev` | Dev server con Turbopack |
 | `npm run build` / `npm start` | Build y servidor de producción |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Guard del día lógico + tests con `node --test` (sin dependencias) |
 | `npm run db:push` | Sincroniza el schema con la base (sin migraciones) |
-| `npm run db:generate` | `prisma migrate dev` |
 | `npm run db:studio` | Prisma Studio |
+
+> Los scripts `db:generate` (`prisma migrate dev`) y `db:migrate` (`prisma migrate deploy`)
+> fueron **eliminados a propósito**. Esta base es compartida con la plataforma de la agencia,
+> que tiene su propio historial de migraciones en `public._prisma_migrations` gestionado desde
+> otro repo. `migrate dev` contra esta base puede intentar baselinear o resetear tablas ajenas.
+> El único camino de DDL de este repo es `db:push`.
 
 ## Estructura
 
