@@ -243,6 +243,20 @@ node --env-file=.env scripts/panel-job.ts rollup --all # recomputar los derivado
 También hay una ruta HTTP (`/api/panel/export`) para bajarte los datos desde el navegador, pero el
 backup de verdad es el CLI: uno que depende de que la web esté levantada no es un backup.
 
+`panel:restore` inserta con `skipDuplicates`, así que restaurar sobre una base con datos deja la
+**unión** de las dos, no una copia del backup. Para volver de verdad a un backup hay que vaciar
+primero:
+
+```bash
+npm run panel:reset                 # dry run: dice qué borraría
+npm run panel:reset -- --confirm    # borra los datos, conserva las definiciones de métricas
+npm run panel:reset -- --confirm --metrics   # reset total
+```
+
+Ese es también el comando para sacar los datos de prueba antes de empezar a medir en serio: la
+primera semana fija la línea de base contra la que se leen todos los meses siguientes, y una noche
+inventada de 8 h la corre.
+
 ### Webhook de GitHub
 
 Opcional. En el repo: Settings, Webhooks, con `application/json`, evento `push`, URL

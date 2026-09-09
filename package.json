@@ -14,6 +14,7 @@
     "dev": "next dev --turbo",
     "guard:time": "node scripts/guard-time.mjs",
     "panel:export": "node --env-file=.env scripts/panel-export.ts",
+    "panel:reset": "node --env-file=.env scripts/panel-reset.ts",
     "panel:restore": "node --env-file=.env scripts/panel-restore.ts",
     "panel:rollup": "node --env-file=.env scripts/panel-job.ts rollup",
     "postinstall": "prisma generate",
