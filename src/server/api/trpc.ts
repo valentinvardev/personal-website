@@ -15,6 +15,7 @@ import {
   isValidAdminToken,
 } from "~/server/admin-auth";
 import { db } from "~/server/db";
+import { panelEnabled } from "~/server/panel/config";
 
 /**
  * 1. CONTEXT
@@ -117,6 +118,30 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
+    const token = adminTokenFromCookieHeader(ctx.headers.get("cookie"));
+    if (!isValidAdminToken(token)) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    return next();
+  });
+
+/**
+ * Panel procedure
+ *
+ * Igual que adminProcedure (comparten sesión por decisión de Valentín), más
+ * el interruptor del panel: con PANEL_ENABLED apagado, sus procedures no
+ * existen aunque la cookie sea válida. Así el código puede estar deployado
+ * sin que haya una superficie encendida.
+ *
+ * El orden importa: primero "existe", después "sos vos". Al revés, un sondeo
+ * con el panel apagado recibiría UNAUTHORIZED, que confirma que la ruta está.
+ */
+export const panelProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(({ ctx, next }) => {
+    if (!panelEnabled()) {
+      throw new TRPCError({ code: "NOT_FOUND" });
+    }
     const token = adminTokenFromCookieHeader(ctx.headers.get("cookie"));
     if (!isValidAdminToken(token)) {
       throw new TRPCError({ code: "UNAUTHORIZED" });

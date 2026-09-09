@@ -179,6 +179,10 @@ export function TopNav() {
     ["/contact", t.nav.contact],
   ];
 
+  // El panel privado es una herramienta, no una página del portfolio: no
+  // lleva la navegación pública ni el toggle de idioma.
+  if (pathname.startsWith("/panel")) return null;
+
   return (
     <>
       <nav className={"nav" + (scrolled ? " nav--scrolled" : "")}>

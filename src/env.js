@@ -11,6 +11,20 @@ export const env = createEnv({
     DATABASE_URL: z.string().url(),
     DIRECT_URL: z.string().url(),
     SUPABASE_SECRET_KEY: z.string().optional(),
+    /**
+     * Panel de medición (/panel). Vale "true" para encenderlo; con cualquier
+     * otro valor, o ausente, la ruta devuelve 404 y no existe.
+     *
+     * ⚠️ Las variables del panel van SIEMPRE como `z.string().optional()`,
+     * sin `.min()` ni `z.enum()`. Este archivo se importa desde
+     * next.config.js, así que una variable MALFORMADA (no ausente: mal
+     * escrita, tipo PANEL_ENABLED=TRUE contra un enum en minúscula) hace
+     * fallar createEnv y el proceso Node no arranca. Ese proceso es el que
+     * sirve el sitio público: un typo en el .env del VPS tiraría
+     * valentinvarela.cloud, no el panel. La validación real vive en runtime,
+     * en src/server/panel/config.ts.
+     */
+    PANEL_ENABLED: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,6 +49,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     DIRECT_URL: process.env.DIRECT_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    PANEL_ENABLED: process.env.PANEL_ENABLED,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,

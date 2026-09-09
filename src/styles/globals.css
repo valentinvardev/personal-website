@@ -1076,3 +1076,31 @@ h1, h2, h3, h4 { margin: 0; }
 /* ---------- DOTS ---------- */
 .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; display: inline-block; }
 .dot-green { background: var(--ds-green-700); }
+
+/* ==========================================================================
+   PANEL de medición (/panel) — privado
+   Mismo sistema de tokens que el sitio, pero con densidad de herramienta:
+   sin fondos animados, sin reveals al scroll, sin ambient. Acá se viene a
+   registrar y a leer números, no a mirar.
+   ========================================================================== */
+.panel { min-height: 100vh; background: var(--ds-background-200); }
+.panel__bar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 0 20px; height: 52px; background: var(--ds-background-100);
+  border-bottom: 1px solid var(--ds-gray-alpha-400); }
+.panel__tabs { display: flex; gap: 4px; }
+.panel__tabs a { padding: 6px 12px; border-radius: var(--ds-radius-sm); font: var(--ds-label-14);
+  color: var(--ds-gray-900); }
+.panel__tabs a:hover { background: var(--ds-gray-alpha-200); color: var(--ds-gray-1000); }
+.panel__logout { appearance: none; background: none; border: none; cursor: pointer; padding: 6px 10px;
+  border-radius: var(--ds-radius-sm); font: var(--ds-label-13); color: var(--ds-gray-700); }
+.panel__logout:hover { background: var(--ds-gray-alpha-200); color: var(--ds-gray-1000); }
+.panel__body { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+
+.panel-login { max-width: 380px; margin: 12vh auto; padding: 0 20px; }
+
+.panel-page h1 { font: var(--ds-heading-32); letter-spacing: var(--ds-tracking-32);
+  font-variant-numeric: tabular-nums; margin-top: 4px; }
+.panel-lead { font: var(--ds-copy-14); color: var(--ds-gray-900); margin: 10px 0 24px; max-width: 52ch; }
+.panel-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.panel-stats .stat { background: var(--ds-background-100); }
+.panel-stats .stat strong { font-variant-numeric: tabular-nums; }

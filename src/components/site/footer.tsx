@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { Icon } from "~/components/geist";
 import { LINKS } from "~/lib/content";
@@ -9,6 +10,7 @@ import { usePrefs } from "./prefs";
 
 export function Footer() {
   const { t } = usePrefs();
+  const pathname = usePathname();
   const nav: [string, string][] = [
     ["/", t.nav.home],
     ["/projects", t.nav.projects],
@@ -17,6 +19,11 @@ export function Footer() {
     ["/about", t.nav.about],
     ["/contact", t.nav.contact],
   ];
+
+  // Ver el comentario en top-nav.tsx: el panel privado no lleva la
+  // navegación del sitio público.
+  if (pathname.startsWith("/panel")) return null;
+
   return (
     <footer className="footer">
       <div className="footer__inner">
