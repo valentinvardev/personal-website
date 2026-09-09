@@ -1,5 +1,6 @@
 import { catalogRouter } from "~/server/api/routers/catalog";
 import { contactRouter } from "~/server/api/routers/contact";
+import { panelRouter } from "~/server/api/routers/panel";
 import { postsRouter } from "~/server/api/routers/posts";
 import { showcaseRouter } from "~/server/api/routers/showcase";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -12,6 +13,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   catalog: catalogRouter,
   contact: contactRouter,
+  panel: panelRouter,
   posts: postsRouter,
   showcase: showcaseRouter,
 });
