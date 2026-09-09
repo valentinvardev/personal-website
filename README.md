@@ -166,3 +166,84 @@ sudo certbot --nginx -d valentinvarela.cloud -d www.valentinvarela.cloud
 El diseño está basado en **Geist**, el design system open-source de Vercel, generado con Claude Design y portado a este repo (la carpeta de referencia `_geist-design/` con tokens, mockups y UI kits vive fuera del repo, en el workspace local). Si cambiás algo del sistema, mantené los nombres de tokens `--ds-*`.
 
 > Notas del DS: el tema oscuro es una aproximación de alta confianza (no verificado contra `design.dark.md`), y los iconos son un subset de Lucide como sustituto documentado de Geist Icons.
+
+## Panel de medición (`/panel`)
+
+Sistema personal de medición de productividad, hábitos y estado. **Privado**: comparte la sesión y
+la contraseña de `/admin`. La especificación completa está en `sistema-medicion-personal-spec.md`,
+en la raíz del workspace.
+
+Vive en su propio schema de Postgres (`panel`), separado de `personal_site` (el portfolio) y de
+`public` (la plataforma de la agencia, que este repo **no** gestiona).
+
+### Encenderlo
+
+Está apagado por defecto: sin `PANEL_ENABLED`, la ruta devuelve 404 y para el mundo no existe.
+
+```bash
+echo 'PANEL_ENABLED="true"' >> .env
+pm2 restart valentinvarela
+```
+
+La base ya tiene el schema y las métricas sembradas. Si alguna vez hay que rehacerlo:
+
+```bash
+npm run db:plan     # muestra el SQL y RECHAZA el plan si toca un schema ajeno
+npm run db:sync     # db push + reaplica prisma/panel-sql/ (CHECK y REVOKE)
+node --env-file=.env prisma/seed-panel.mjs
+```
+
+### El día lógico
+
+Todo el sistema cuelga de una sola decisión: **un día empieza a las 5:00 de Buenos Aires**, así que
+lo que hacés a las 2 de la mañana cuenta para el día anterior.
+
+`src/lib/panel/logical-date.ts` es el **único** lugar autorizado a decidir a qué día pertenece un
+instante, y `scripts/guard-time.mjs` lo hace cumplir: prohíbe `getDate()`, `toLocaleDateString()` y
+`new Intl.DateTimeFormat` en el resto del panel. Corre en `npm test` y en `prebuild`.
+
+Cambiar el corte obliga a recomputar todo el histórico (`panel-job rollup --all`).
+
+### El cron
+
+```bash
+node --env-file=.env scripts/panel-job.ts rollup --catchup    # lo que corre el cron
+node --env-file=.env scripts/panel-job.ts rollup --last 7
+node --env-file=.env scripts/panel-job.ts rollup --all        # rebuild completo
+```
+
+La línea para el crontab está en `deploy/crontab.txt`, comentada con el porqué de cada parte.
+Corre **en otro proceso**, con su propio pool de 2 conexiones: el proceso de pm2 que sirve el sitio
+tiene `max_memory_restart: 512M` y un rebuild grande ahí adentro reiniciaría el sitio público.
+
+El dashboard no depende del cron para el día de hoy: ese se calcula al vuelo desde los eventos.
+
+### Backup
+
+El valor del sistema está en la serie histórica, que no se puede reconstruir.
+
+```bash
+npm run panel:export                                  # a backups/
+npm run panel:restore -- backups/panel-....json       # dry run
+npm run panel:restore -- backups/panel-....json --confirm
+node --env-file=.env scripts/panel-job.ts rollup --all # recomputar los derivados
+```
+
+También hay una ruta HTTP (`/api/panel/export`) para bajarte los datos desde el navegador, pero el
+backup de verdad es el CLI: uno que depende de que la web esté levantada no es un backup.
+
+### Webhook de GitHub
+
+Opcional. En el repo: Settings, Webhooks, con `application/json`, evento `push`, URL
+`https://valentinvarela.cloud/api/ingest/github` y un secreto que va en `GITHUB_WEBHOOK_SECRET`.
+Sin esa variable el endpoint devuelve 503.
+
+Para probarlo sin hacer un push:
+
+```bash
+node --env-file=.env scripts/fake-github-delivery.ts --url http://localhost:3000
+node --env-file=.env scripts/fake-github-delivery.ts --tamper   # debe dar 401
+```
+
+> Si Cloudflare devuelve un challenge HTML, la entrega figura fallida con un 403 que no aparece en
+> ningún log del VPS. Ahí hace falta una regla de WAF de tipo Skip para esa ruta.
