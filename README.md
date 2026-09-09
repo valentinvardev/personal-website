@@ -95,7 +95,18 @@ pm2 start ecosystem.config.cjs   # app "valentinvarela" en el puerto 3013
 pm2 save
 ```
 
-Para actualizar: `git pull && npm ci && npm run build && pm2 restart valentinvarela`.
+Para actualizar:
+
+```bash
+git pull && npm install && npm run build && pm2 restart valentinvarela
+```
+
+> ⚠️ **`npm install`, no `npm ci`.** `npm ci` borra `node_modules` **entero** antes de reinstalar,
+> así que garantiza una ventana de caída y, si el install falla a mitad de camino, deja el servidor
+> sin `next`: pm2 (con `autorestart: true`) entra en un bucle de arranques fallidos y nginx devuelve
+> 502. Pasó el 2026-09-09 con una dependencia pesada. `npm install` es incremental y no borra nada
+> hasta tener con qué reemplazarlo. Reservá `npm ci` para la instalación inicial en un servidor
+> nuevo, donde no hay nada que tirar abajo.
 
 ### Si el sitio "está caído" (500 intermitentes o páginas que tardan 10 s)
 
