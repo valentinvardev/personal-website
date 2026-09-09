@@ -12,7 +12,7 @@ import {
   type LogicalDate,
 } from "../../lib/panel/logical-date.ts";
 import { adherence, completeness, type MetricResult } from "../../lib/panel/metrics.ts";
-import { dayOfEvent, systemStartDay } from "./rollup.ts";
+import { dayOfEvent, lastRolledDay, systemStartDay } from "./rollup.ts";
 import type { PrismaClient } from "../../../generated/prisma";
 
 /**
@@ -61,14 +61,58 @@ export interface HeatDay {
   evaluable: number;
 }
 
+export interface Freshness {
+  lastRunAt: Date | null;
+  ok: boolean | null;
+  staleDays: number | null;
+  /**
+   * Días cerrados que el rollup todavía no consolidó.
+   *
+   * Es la única señal que no depende de que el job haya llegado a arrancar. El
+   * 2026-09-09 el cron del VPS moría en `ERR_UNKNOWN_FILE_EXTENSION` porque la
+   * máquina tenía Node 20 y los CLI son TypeScript: el proceso se caía ANTES de
+   * crear la fila en `JobRun`, así que la bitácora que existe justo para
+   * detectar "el cron dejó de andar" no veía nada, y `lastRunAt` en null se
+   * leía igual que un panel recién estrenado.
+   */
+  pendingDays: number;
+}
+
 export interface Overview {
   today: LogicalDate;
-  freshness: { lastRunAt: Date | null; ok: boolean | null; staleDays: number | null };
+  freshness: Freshness;
   adherence28: MetricResult;
   completeness28: MetricResult;
   habits: HabitCard[];
   checkins: CheckinCard[];
   heatmap: HeatDay[];
+}
+
+/**
+ * Cuántos días cerrados le faltan al rollup.
+ *
+ * Cerrado quiere decir "hasta ayer": el día en curso se calcula en vivo y no
+ * es tarea del cron. Los días excluidos no cuentan, porque para ellos la
+ * ausencia de filas es el resultado correcto.
+ *
+ * Se compara contra `DailyRollup` y no contra `JobRun` por la misma razón que
+ * `lastRolledDay`: el estado del scheduler no es fuente de verdad sobre qué
+ * datos existen. Un job que arrancó, falló y dejó su fila diría "corrió"; uno
+ * que nunca llegó a ejecutarse no diría nada. Los datos que faltan se ven en
+ * los dos casos.
+ */
+export function pendingRollupDays(
+  today: LogicalDate,
+  systemStart: LogicalDate | null,
+  lastRolled: LogicalDate | null,
+  excludedDays: ReadonlySet<string>,
+): number {
+  if (!systemStart) return 0; // sin un solo evento no hay nada que consolidar
+  const yesterday = addDays(today, -1);
+  if (systemStart > yesterday) return 0; // el sistema arrancó hoy
+  const from = lastRolled && lastRolled >= systemStart ? addDays(lastRolled, 1) : systemStart;
+  if (from > yesterday) return 0;
+  return rangeOfDays(from, yesterday).filter((d) => !excludedDays.has(d)).length;
 }
 
 const DOMAINS: Record<string, [number, number]> = {
@@ -88,7 +132,7 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
   const todayBounds = logicalRangeBounds(addDays(today, -1), addDays(today, 1));
   const checkinBounds = logicalRangeBounds(windowFrom, today);
 
-  const [metrics, rollups, todayEvents, checkinHeaders, lastRun, excluded, systemStart] = await Promise.all([
+  const [metrics, rollups, todayEvents, checkinHeaders, lastRun, excluded, systemStart, lastRolled] = await Promise.all([
     db.panelMetric.findMany({
       where: { archivedAt: null },
       orderBy: [{ sortOrder: "asc" }, { key: "asc" }],
@@ -139,6 +183,7 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
       select: { logicalDate: true },
     }),
     systemStartDay(db),
+    lastRolledDay(db),
   ]);
 
   const excludedDays = new Set(excluded.map((e) => fromDbDate(e.logicalDate) as string));
@@ -246,6 +291,7 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
       // Cuántos días hace que no corre. "Rollup: ok" sin fecha sigue diciendo
       // ok el viernes aunque el cron haya muerto el martes.
       staleDays: lastRun?.finishedAt ? diffDays(logicalDate(lastRun.finishedAt), today) : null,
+      pendingDays: pendingRollupDays(today, systemStart, lastRolled, excludedDays),
     },
     adherence28: adherence(allHits),
     completeness28: completeness(completenessDays),

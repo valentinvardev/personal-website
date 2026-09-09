@@ -6,7 +6,7 @@ import { longDayLabel } from "~/lib/panel/format";
 import { asPercent, type MetricResult } from "~/lib/panel/metrics";
 import { db } from "~/server/db";
 import { requirePanel } from "~/server/panel/auth";
-import { buildOverview, WINDOW_DAYS } from "~/server/panel/overview";
+import { buildOverview, WINDOW_DAYS, type Freshness } from "~/server/panel/overview";
 
 /**
  * Nivel 1 y 2 del dashboard (spec §8). El nivel 3 (proyectos con deuda) y el
@@ -133,11 +133,25 @@ function barClass(r: MetricResult): string {
  * muerto el martes, y como los dias sin fila salen del denominador el
  * porcentaje casi no se mueve: lo unico que encoge es el n.
  */
-function freshnessLabel(f: { lastRunAt: Date | null; ok: boolean | null; staleDays: number | null }): string {
-  if (!f.lastRunAt) return "El rollup todavía no corrió. Hoy se calcula en vivo igual.";
+function freshnessLabel(f: Freshness): string {
+  const faltan = f.pendingDays === 1 ? "1 día cerrado" : `${f.pendingDays} días cerrados`;
+
+  // "Todavía no corrió" es tranquilizador el primer día y alarmante a las tres
+  // semanas, y el texto era el mismo en los dos casos. Los días pendientes son
+  // lo que separa una cosa de la otra, y es la única señal que sobrevive a que
+  // el job muera antes de escribir su fila en JobRun.
+  if (!f.lastRunAt) {
+    return f.pendingDays > 0
+      ? `El rollup nunca corrió y hay ${faltan} sin consolidar. El cron no está andando.`
+      : "El rollup todavía no corrió. Hoy se calcula en vivo igual.";
+  }
+
   const d = f.staleDays ?? 0;
   const cuando = d <= 0 ? "hoy" : d === 1 ? "ayer" : `hace ${d} días`;
   if (!f.ok) return `Rollup: falló (${cuando}). Los días cerrados pueden estar desactualizados.`;
+  if (f.pendingDays > 0) {
+    return `Rollup: ${faltan} sin consolidar (última corrida ${cuando}). El cron no está al día.`;
+  }
   if (d >= 2) return `Rollup: última corrida ${cuando}. El cron puede estar caído.`;
   return `Rollup: ok (${cuando}). Hoy se calcula en vivo.`;
 }
