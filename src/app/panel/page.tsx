@@ -143,7 +143,8 @@ function freshnessLabel(f: { lastRunAt: Date | null; ok: boolean | null; staleDa
 }
 
 function formatLast(v: number | null, unit: string): string {
-  if (v === null) return "—";
+  // Guion corto, no largo: el sitio no usa guiones largos en ningún texto.
+  if (v === null) return "-";
   if (unit === "min") {
     const h = Math.floor(v / 60);
     const m = Math.round(v % 60);

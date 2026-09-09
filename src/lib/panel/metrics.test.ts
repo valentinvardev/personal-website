@@ -91,6 +91,13 @@ test("consistencia: serie estable cerca de 1, serie errática mucho menor", () =
   assert.equal(consistency([5]).reason, "muestra-chica");
   // Media cero: la fórmula divide por cero, así que no es calculable.
   assert.equal(consistency([0, 0]).value, null);
+  // Una serie con un pico enorme da un coeficiente de variación mayor que 1.
+  // Se recorta en 0: "-43% de consistencia" no significa nada.
+  assert.equal(consistency([0.1, 0.1, 0.1, 40]).value, 0);
+  // Con media negativa el signo se daba vuelta y la serie más errática salía
+  // como la más consistente.
+  const negativa = consistency([-1, -20, -2, -19]);
+  assert.ok(negativa.value !== null && negativa.value >= 0 && negativa.value < 0.3);
 });
 
 test("ritmo requerido", () => {
@@ -103,6 +110,6 @@ test("ritmo requerido", () => {
 
 test("el formato imprime un guion cuando no hay dato, nunca 0%", () => {
   assert.equal(asPercent(adherence([true, false])), "50%");
-  assert.equal(asPercent(adherence([null])), "—");
+  assert.equal(asPercent(adherence([null])), "-");
   assert.equal(asPercent(adherence([false])), "0%");
 });

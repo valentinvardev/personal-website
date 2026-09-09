@@ -118,6 +118,13 @@ export function momentum(values: readonly (number | null)[]): MetricResult {
  *
  * Se usa el desvío POBLACIONAL, no muestral: la serie es la población de días
  * observados, no una muestra de un universo mayor.
+ *
+ * El resultado se recorta a [0, 1] y la media se toma en valor absoluto. Sin
+ * eso, una serie muy irregular da un coeficiente de variación mayor que 1 y la
+ * pantalla imprime "-43% de consistencia", que no significa nada: por debajo
+ * de cero ya no hay grados de inconsistencia, hay ruido. Y con media negativa
+ * (posible en cualquier métrica derivada, como un delta) el signo se daba
+ * vuelta y la serie más errática salía como la más consistente.
  */
 export function consistency(values: readonly (number | null)[]): MetricResult {
   const xs = values.filter((v): v is number => v !== null && Number.isFinite(v));
@@ -125,7 +132,8 @@ export function consistency(values: readonly (number | null)[]): MetricResult {
   const mean = xs.reduce((a, b) => a + b, 0) / xs.length;
   if (mean === 0) return { value: null, n: xs.length, reason: "sin-datos" };
   const variance = xs.reduce((a, b) => a + (b - mean) ** 2, 0) / xs.length;
-  return { value: 1 - Math.sqrt(variance) / mean, n: xs.length };
+  const cv = Math.sqrt(variance) / Math.abs(mean);
+  return { value: Math.max(0, 1 - cv), n: xs.length };
 }
 
 /**
@@ -145,6 +153,7 @@ export function requiredPace(target: number, accumulated: number, daysLeft: numb
 
 /** Formatea un MetricResult como porcentaje, o un guion si no es calculable. */
 export function asPercent(r: MetricResult, digits = 0): string {
-  if (r.value === null) return "—";
+  // Guion corto, no largo: el sitio no usa guiones largos en ningún texto.
+  if (r.value === null) return "-";
   return `${(r.value * 100).toFixed(digits)}%`;
 }
