@@ -50,3 +50,5 @@ yarn-error.log*
 
 # idea files
 .idea
+# Backups del panel de medicion (datos personales, nunca en git)
+backups/
