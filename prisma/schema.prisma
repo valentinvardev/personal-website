@@ -2,151 +2,341 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-    output   = "../generated/prisma"
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
-    provider = "postgresql"
-    // Con Supabase: DATABASE_URL = pooler (puerto 6543, pgbouncer) y
-    // DIRECT_URL = conexión directa (puerto 5432) para migraciones.
-    url       = env("DATABASE_URL")
-    directUrl = env("DIRECT_URL")
+  provider  = "postgresql"
+  // Con Supabase: DATABASE_URL = pooler (puerto 6543, pgbouncer) y
+  // DIRECT_URL = conexión directa (puerto 5432) para migraciones.
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+
+  // Dos schemas Postgres, un solo cliente (multiSchema es GA en Prisma 6):
+  //   personal_site -> el portfolio público
+  //   panel         -> el sistema personal de medición (privado)
+  // El schema `public` NO está acá y por eso Prisma no puede tocarlo: ahí
+  // vive la plataforma de la agencia, con su propio historial de
+  // migraciones gestionado desde otro repo. Declarar `schemas` convierte
+  // esa regla en una garantía versionada en git, en vez de depender del
+  // parámetro ?schema= del connection string.
+  schemas = ["panel", "personal_site"]
 }
 
 model ContactMessage {
-    id        Int      @id @default(autoincrement())
-    name      String
-    email     String
-    subject   String?
-    message   String
-    read      Boolean  @default(false)
-    createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-    @@index([read, createdAt])
+  @@index([read, createdAt])
+  @@schema("personal_site")
 }
 
 // Captura de página completa de un proyecto, mostrada como tab en el modal
 // de preview ("Ver sitio"). projectSlug referencia Project.slug.
 model ProjectSection {
-    id          Int      @id @default(autoincrement())
-    projectSlug String
-    label       String
-    labelEn     String?
-    imageUrl    String
-    sortOrder   Int      @default(0)
-    createdAt   DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  projectSlug String
+  label       String
+  labelEn     String?
+  imageUrl    String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
 
-    @@index([projectSlug, sortOrder])
+  @@index([projectSlug, sortOrder])
+  @@schema("personal_site")
 }
 
 // Nicho: vertical de trabajo (fotografía deportiva, e-commerce, IA…).
 // Los campos *En son opcionales; el frontend cae al español si faltan.
 model Niche {
-    id        Int      @id @default(autoincrement())
-    slug      String   @unique
-    name      String
-    nameEn    String?
-    tagline   String?
-    taglineEn String?
-    icon      String   @default("box") // IconName del set Geist/Lucide
-    color     String   @default("blue") // escala de acento Geist
-    sortOrder Int      @default(0)
-    createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  name      String
+  nameEn    String?
+  tagline   String?
+  taglineEn String?
+  icon      String   @default("box") // IconName del set Geist/Lucide
+  color     String   @default("blue") // escala de acento Geist
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 
-    projects Project[]
-    blocks   ContentBlock[]
+  projects Project[]
+  blocks   ContentBlock[]
+
+  @@schema("personal_site")
 }
 
 // Proyecto del portfolio, gestionado desde /admin.
 model Project {
-    id            Int      @id @default(autoincrement())
-    slug          String   @unique
-    name          String
-    icon          String   @default("box")
-    color         String   @default("blue")
-    logoUrl       String? // logo propio: reemplaza al glifo icono+color
-    role          String?
-    roleEn        String?
-    statusColor   String   @default("gray") // color del Badge
-    statusLabel   String   @default("Activo")
-    statusLabelEn String?
-    short         String
-    shortEn       String?
-    long          String?
-    longEn        String?
-    stack         String[]
-    features      String[]
-    featuresEn    String[]
-    liveUrl       String?
-    repoUrl       String?
-    featured      Boolean  @default(false)
-    sortOrder     Int      @default(0)
-    createdAt     DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  name          String
+  icon          String   @default("box")
+  color         String   @default("blue")
+  logoUrl       String? // logo propio: reemplaza al glifo icono+color
+  role          String?
+  roleEn        String?
+  statusColor   String   @default("gray") // color del Badge
+  statusLabel   String   @default("Activo")
+  statusLabelEn String?
+  short         String
+  shortEn       String?
+  long          String?
+  longEn        String?
+  stack         String[]
+  features      String[]
+  featuresEn    String[]
+  liveUrl       String?
+  repoUrl       String?
+  featured      Boolean  @default(false)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
 
-    nicheId Int?
-    niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: SetNull)
+  nicheId Int?
+  niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: SetNull)
 
-    blocks ContentBlock[]
+  blocks ContentBlock[]
 
-    @@index([nicheId, sortOrder])
-    @@index([featured, sortOrder])
+  @@index([nicheId, sortOrder])
+  @@index([featured, sortOrder])
+  @@schema("personal_site")
 }
 
 // Publicación del feed de escritos (/writing). Solo escribe el admin;
 // el visitante es lector. El contenido es monolingüe (la voz del autor).
 model Post {
-    id        Int      @id @default(autoincrement())
-    title     String?
-    body      String
-    category  String?
-    pinned    Boolean  @default(false)
-    published Boolean  @default(true)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  title     String?
+  body      String
+  category  String?
+  pinned    Boolean  @default(false)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-    attachments PostAttachment[]
+  attachments PostAttachment[]
 
-    @@index([published, pinned, createdAt])
+  @@index([published, pinned, createdAt])
+  @@schema("personal_site")
 }
 
 // Adjunto de un post: imagen (galería) o archivo descargable (recurso).
 model PostAttachment {
-    id        Int     @id @default(autoincrement())
-    kind      String // "image" | "file"
-    url       String
-    name      String
-    mime      String?
-    size      Int?
-    sortOrder Int     @default(0)
+  id        Int     @id @default(autoincrement())
+  kind      String // "image" | "file"
+  url       String
+  name      String
+  mime      String?
+  size      Int?
+  sortOrder Int     @default(0)
 
-    postId Int
-    post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId Int
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-    @@index([postId, sortOrder])
+  @@index([postId, sortOrder])
+  @@schema("personal_site")
 }
 
 // Tarjeta dinámica de contenido ("material"): nota de texto o imagen,
 // mostrada en la grilla bento de la página del nicho. span controla el
 // ancho de la tarjeta en la grilla (sm | md | lg).
 model ContentBlock {
-    id        Int      @id @default(autoincrement())
-    kind      String // "text" | "image"
-    title     String?
-    titleEn   String?
-    body      String?
-    bodyEn    String?
-    imageUrl  String?
-    span      String   @default("md")
-    sortOrder Int      @default(0)
-    createdAt DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  kind      String // "text" | "image"
+  title     String?
+  titleEn   String?
+  body      String?
+  bodyEn    String?
+  imageUrl  String?
+  span      String   @default("md")
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 
-    nicheId Int?
-    niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: Cascade)
+  nicheId Int?
+  niche   Niche? @relation(fields: [nicheId], references: [id], onDelete: Cascade)
 
-    projectId Int?
-    project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-    @@index([nicheId, sortOrder])
-    @@index([projectId, sortOrder])
+  @@index([nicheId, sortOrder])
+  @@index([projectId, sortOrder])
+  @@schema("personal_site")
+}
+
+// ============================================================================
+// PANEL: sistema personal de medición (privado, schema Postgres `panel`)
+//
+// Los modelos llevan prefijo `Panel` en Prisma y `@@map` al nombre limpio: el
+// portfolio ya tiene un `Project` y la plataforma de la agencia tiene otro, y
+// los nombres de modelo de Prisma son únicos en todo el cliente.
+//
+// Convenciones que NO se cambian sin recomputar el histórico:
+//   - `@db.Timestamptz(3)` para instantes. Milisegundos, que es lo que tiene
+//     un Date de JS: declarar microsegundos sería precisión que el
+//     instrumento no tiene.
+//   - `@db.Date` para días lógicos, nunca timestamp. Un día lógico ya tiene
+//     el corte de las 5 AM aplicado y no es un instante; guardarlo con hora
+//     hace que dos filas del mismo día no colisionen contra la PK compuesta
+//     y el upsert inserte duplicados.
+//   - Todo índice se declara acá. Un índice creado a mano en SQL lo borra el
+//     próximo `db push` sin avisar.
+// ============================================================================
+
+/// Qué medimos. Una sola tabla para hábitos y para los sujetos del check-in
+/// diario: el ánimo no es un hábito, pero sí es una métrica.
+model PanelMetric {
+  id   String @id @default(cuid())
+  /// Clave estable y legible ("read.minutes", "sleep.duration", "mood").
+  /// Es lo que viaja en Event.subjectId, así que sobrevive a que borres la
+  /// definición y hace que el export se pueda leer sin la tabla al lado.
+  key  String @unique
+  name String
+
+  /// habit  -> se puntúa, tiene target y racha
+  /// checkin -> se registra pero no se juzga (sueño, energía, ánimo)
+  kind String
+
+  /// check | min | count | scale
+  unit String
+
+  /// Spec §5.4: el ánimo no tiene ni target ni racha ni semáforo, y esa
+  /// decisión vive en el schema y no en la capa de presentación, porque las
+  /// decisiones que viven solo en la vista se pierden en la primera vista
+  /// nueva que alguien copie.
+  scored      Boolean @default(true)
+  /// NOT NULL si y solo si scored (CHECK en panel-sql/001).
+  targetValue Float?
+
+  /// v1 solo admite "daily" (CHECK). Un hábito semanal generaría hit:false
+  /// los siete días y la adherencia toparía en 57% con el hábito cumplido:
+  /// el sistema te diría que fallaste justo cuando cumpliste.
+  cadence   String @default("daily")
+  sortOrder Int    @default(0)
+
+  archivedAt DateTime? @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+
+  @@map("Metric")
+  @@schema("panel")
+}
+
+/// El log crudo. Nada se deriva antes de guardar: la duración de sueño sale
+/// de dos horarios, y dos horarios no salen de una duración.
+model PanelEvent {
+  id String @id @default(cuid())
+
+  /// Cuándo pasó.
+  occurredAt DateTime @db.Timestamptz(3)
+  /// Cuándo se registró. La diferencia con occurredAt es lo que permite
+  /// detectar sesgo de recuerdo en la carga retrospectiva (spec §5.3).
+  recordedAt DateTime @default(now()) @db.Timestamptz(3)
+
+  type String
+
+  /// manual | github | (a futuro: la app de escritorio, wakatime…)
+  sourceKey String
+
+  /// Identidad del evento en su fuente. NOT NULL SIEMPRE y armado en el
+  /// servidor: con NULL, Postgres considera cada fila distinta y un doble tap
+  /// del atajo del teléfono crea dos check-ins del mismo día, que es
+  /// exactamente lo que corrompe la métrica de completitud.
+  externalId String
+
+  /// "metric:<key>" | "repo:<owner>/<name>". Clave estable, no un cuid opaco.
+  subjectId String?
+
+  /// NULLABLE a propósito: la ausencia de dato no es cero. Toda agregación
+  /// excluye los null del denominador y nunca los imputa.
+  value Float?
+  meta  Json?
+
+  @@unique([sourceKey, externalId])
+  @@index([subjectId, occurredAt])
+  /// El rollup barre por rango de fechas sin fijar sujeto: sin este índice
+  /// esa query es un seq scan de toda la tabla.
+  @@index([occurredAt])
+  @@map("Event")
+  @@schema("panel")
+}
+
+/// Tier 1: agregado diario materializado por el cron nocturno.
+/// Se recomputa entero desde Event, así que se puede borrar y reconstruir.
+model PanelDailyRollup {
+  subjectId   String
+  logicalDate DateTime @db.Date
+
+  count  Int
+  /// Nullables porque un sujeto no puntuado (el ánimo) no tiene target ni
+  /// hit, y obligarlo a guardar `target=0, hit=false` sería un dato duro
+  /// falso. CHECK en panel-sql/001: target y hit son ambos NULL o ninguno.
+  total  Float?
+  target Float?
+  hit    Boolean?
+
+  formulaVersion Int      @default(1)
+  computedAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  @@id([subjectId, logicalDate])
+  @@index([logicalDate])
+  @@map("DailyRollup")
+  @@schema("panel")
+}
+
+/// Días que no cuentan (enfermedad, viaje, feriado). Salen del DENOMINADOR,
+/// no del numerador: sin esto, dos semanas de vacaciones destruyen la
+/// adherencia y la métrica deja de significar algo.
+model PanelExcludedDay {
+  logicalDate DateTime @id @db.Date
+  reason      String
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("ExcludedDay")
+  @@schema("panel")
+}
+
+/// Bitácora de los jobs. Sin esto no hay forma de saber si el cron corrió:
+/// un cron que dejó de andar se ve igual que una semana sin datos.
+model PanelJobRun {
+  id  String @id @default(cuid())
+  job String
+
+  startedAt   DateTime  @default(now()) @db.Timestamptz(3)
+  finishedAt  DateTime? @db.Timestamptz(3)
+  ok          Boolean?
+  rowsWritten Int?
+
+  /// Ventana procesada, como día lógico en texto ("YYYY-MM-DD").
+  windowFrom String?
+  windowTo   String?
+  error      String?
+
+  @@index([job, startedAt])
+  @@map("JobRun")
+  @@schema("panel")
+}
+
+/// Payload crudo de los webhooks, escrito ANTES de responder 202.
+/// GitHub no reintenta las entregas fallidas de un webhook de repositorio:
+/// sin esta fila, un error al parsear hace desaparecer el commit y el único
+/// rastro queda en una UI de GitHub que nadie mira.
+model PanelInbox {
+  /// X-GitHub-Delivery: hace idempotente el reenvío manual.
+  id     String @id
+  source String
+  event  String
+
+  payload     Json
+  receivedAt  DateTime  @default(now()) @db.Timestamptz(3)
+  processedAt DateTime? @db.Timestamptz(3)
+  error       String?
+
+  @@index([processedAt])
+  @@map("Inbox")
+  @@schema("panel")
 }

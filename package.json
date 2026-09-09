@@ -6,7 +6,10 @@
   "scripts": {
     "build": "prisma generate && next build",
     "prebuild": "node scripts/guard-time.mjs",
+    "db:plan": "node --env-file=.env scripts/db-plan.mjs",
     "db:push": "prisma db push",
+    "db:sql": "node --env-file=.env scripts/db-sql.mjs",
+    "db:sync": "npm run db:push && npm run db:sql",
     "db:seed": "node --env-file=.env prisma/seed.mjs",
     "db:studio": "prisma studio",
     "dev": "next dev --turbo",
