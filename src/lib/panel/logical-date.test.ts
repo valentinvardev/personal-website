@@ -12,6 +12,7 @@ import {
   parseLogicalDate,
   rangeOfDays,
   toDbDate,
+  weekdayOf,
 } from "./logical-date.ts";
 
 const ld = parseLogicalDate;
@@ -115,4 +116,14 @@ test("entradas inválidas fallan ruidosamente, no devuelven un día plausible", 
 
 test("el corte es el que decidimos", () => {
   assert.equal(CUTOFF_HOUR, 5);
+});
+
+test("día de la semana con la semana empezando en lunes", () => {
+  // 2026-09-09 es miércoles.
+  assert.equal(weekdayOf(ld("2026-09-09")), 2);
+  assert.equal(weekdayOf(ld("2026-09-07")), 0, "lunes");
+  assert.equal(weekdayOf(ld("2026-09-13")), 6, "domingo");
+  // Siete días seguidos recorren los siete valores sin repetir.
+  const week = rangeOfDays(ld("2026-09-07"), ld("2026-09-13")).map(weekdayOf);
+  assert.deepEqual(week, [0, 1, 2, 3, 4, 5, 6]);
 });

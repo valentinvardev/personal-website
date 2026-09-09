@@ -212,6 +212,20 @@ export function toDbDate(ld: LogicalDate): Date {
   return new Date(Date.UTC(y, m - 1, d));
 }
 
+/**
+ * Día de la semana de un día lógico: 0 lunes, 6 domingo.
+ *
+ * Vive acá y no en el componente del heatmap porque es la misma clase de
+ * pregunta que resuelve este módulo ("qué día es"), y porque calcularlo con
+ * un Date local en la UI lo correría de día en la mitad del planeta. Un día
+ * lógico ya es una fecha de calendario, así que esto es aritmética pura.
+ */
+export function weekdayOf(ld: LogicalDate): number {
+  const { y, m, d } = split(ld);
+  // getUTCDay: 0 domingo. Se rota para que la semana empiece en lunes.
+  return (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+}
+
 /** Columna `@db.Date` -> día lógico. Solo getUTC*, nunca getDate. */
 export function fromDbDate(value: Date): LogicalDate {
   if (Number.isNaN(value.getTime())) throw new RangeError("fromDbDate: fecha inválida");
