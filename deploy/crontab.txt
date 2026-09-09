@@ -30,30 +30,42 @@
 #   >> ... 2>&1       todo al log, incluido el stderr
 #
 # ---------------------------------------------------------------------------
-# PATH explícito: es obligatorio, no cosmético
+# La ruta al binario de Node va COMPLETA en cada línea, y no en un PATH global
 # ---------------------------------------------------------------------------
-# cron corre con PATH=/usr/bin:/bin y bash no interactivo NO lee ~/.profile, así
-# que si Node vino por nvm no está en el PATH. Un `$(which node)` ahí devuelve
-# vacío y la línea colapsa en `flock -n /tmp/... --env-file=.env ...`, que muere
-# con exit 127 antes de ejecutar nada. Y como el proceso nunca arranca, no queda
-# ni una fila en JobRun: la bitácora que existe justo para detectar "el cron
-# dejó de andar" es ciega a este fallo.
+# Dos razones, las dos aprendidas rompiéndolo.
 #
-# Verificá tu ruta con `which node` en una sesión SSH y poné ESA en el PATH:
-PATH=/home/photoplatform/.nvm/versions/node/v22.18.0/bin:/usr/local/bin:/usr/bin:/bin
+# 1. Los CLI del panel son TypeScript y se ejecutan con `node` directo, apoyados
+#    en el type-stripping nativo, que existe recién desde Node 22.6. El Node del
+#    sistema en el VPS es el 20 (paquete de NodeSource), y ahí mueren con
+#    ERR_UNKNOWN_FILE_EXTENSION ".ts". Peor: mueren ANTES de crear la fila en
+#    JobRun, así que la bitácora que existe justo para detectar "el cron dejó de
+#    andar" no ve nada. Por eso el panel además cuenta días sin consolidar
+#    (freshness.pendingDays), que es la única señal que sobrevive a esto.
+#
+#    La solución NO es cambiar el Node del sistema: ese VPS corre once apps bajo
+#    el mismo pm2 y ninguna es nuestra para romper. Node 22 vive aparte, dentro
+#    del home, y solo lo usan estas tres líneas.
+#
+# 2. Un `PATH=...` arriba del crontab aplica a TODAS las entradas del archivo,
+#    incluidas las de las otras apps del mismo usuario. Poner Node 22 primero
+#    ahí les cambiaría el intérprete a espaldas de quien las escribió. Una ruta
+#    absoluta por línea toca exactamente lo que tiene que tocar.
+#
+# Si moviste Node a otro lado, cambiá NODE22 en las tres líneas. Verificá con:
+#   /home/photoplatform/node22/bin/node -v     # tiene que decir v22.x
 SHELL=/bin/bash
 
 # Rollup diario.
-30 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-rollup.lock node --env-file=.env scripts/panel-job.ts rollup --catchup >> logs/panel.log 2>&1
+30 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-rollup.lock /home/photoplatform/node22/bin/node --env-file=.env scripts/panel-job.ts rollup --catchup >> logs/panel.log 2>&1
 
 # Reprocesa entregas de webhook que quedaron colgadas. GitHub no reintenta las
 # entregas fallidas de un webhook de repositorio, así que sin esto un fallo del
 # procesamiento en background hace desaparecer commits para siempre.
-40 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-inbox.lock node --env-file=.env scripts/panel-job.ts inbox >> logs/panel.log 2>&1
+40 8 * * * cd /home/photoplatform/valentinvarela && mkdir -p logs && /usr/bin/flock -n /tmp/vv-panel-inbox.lock /home/photoplatform/node22/bin/node --env-file=.env scripts/panel-job.ts inbox >> logs/panel.log 2>&1
 
 # Backup semanal, los domingos. El README y panel-export.ts sostienen que el
 # backup de verdad es el CLI: acá es donde eso se vuelve cierto.
-0 9 * * 0 cd /home/photoplatform/valentinvarela && mkdir -p logs && node --env-file=.env scripts/panel-export.ts >> logs/panel.log 2>&1 && find backups -name 'panel-*.json' -mtime +60 -delete
+0 9 * * 0 cd /home/photoplatform/valentinvarela && mkdir -p logs && /home/photoplatform/node22/bin/node --env-file=.env scripts/panel-export.ts >> logs/panel.log 2>&1 && find backups -name 'panel-*.json' -mtime +60 -delete
 
 # Conviene además rotar logs/panel.log: el proceso de Next ya escribe a
 # logs/out.log sin rotación. Un /etc/logrotate.d/valentinvarela con
