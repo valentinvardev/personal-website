@@ -11,6 +11,14 @@ import {
   todayLogical,
   type LogicalDate,
 } from "../../lib/panel/logical-date.ts";
+import {
+  cumulativeLine,
+  evaluableCount,
+  ewmaSeries,
+  paceProjection,
+  type CompoundLine,
+  type PaceProjection,
+} from "../../lib/panel/compound.ts";
 import { adherence, completeness, type MetricResult } from "../../lib/panel/metrics.ts";
 import { dayOfEvent, lastRolledDay, systemStartDay } from "./rollup.ts";
 import type { PrismaClient } from "../../../generated/prisma";
@@ -33,6 +41,16 @@ import type { PrismaClient } from "../../../generated/prisma";
 
 export const WINDOW_DAYS = 28;
 export const HEATMAP_DAYS = 365;
+
+/**
+ * Días de arranque que fijan la tasa contra la que te comparás después.
+ *
+ * Un mes: suficiente para que la tasa no sea un accidente de tres días, y corto
+ * frente al horizonte del sistema. Antes de tener 30 días evaluables MÁS uno
+ * posterior, la comparación no se muestra: compararse consigo mismo da cero y
+ * ese cero parece información.
+ */
+export const PACE_WARMUP_DAYS = 30;
 
 export interface HabitCard {
   key: string;
@@ -78,9 +96,35 @@ export interface Freshness {
   pendingDays: number;
 }
 
+/** Una línea del gráfico compuesto, con su contrafactual. */
+export interface CompoundLineView extends CompoundLine {
+  /** Tu propio ritmo de arranque proyectado, o null si todavía no alcanza. */
+  pace: PaceProjection | null;
+}
+
+/**
+ * Los datos del gráfico compuesto: dos lecturas de la misma serie diaria.
+ *
+ * La ventana arranca en el primer día del sistema y no 365 días atrás. Un panel
+ * de una semana con un eje de un año dibuja once meses de vacío y hace parecer
+ * que el sistema falló, cuando lo único que pasa es que es nuevo.
+ */
+export interface CompoundData {
+  days: LogicalDate[];
+  /** Adherencia agregada de cada día, en [0,1]. `null` si no había nada evaluable. */
+  daily: (number | null)[];
+  /** La misma serie suavizada, para leer la tendencia sin el ruido diario. */
+  trend: (number | null)[];
+  /** Días con alguna observación. El `n` de todo lo de arriba. */
+  n: number;
+  /** Una línea por hábito puntuado: acumulado de días cumplidos. */
+  lines: CompoundLineView[];
+}
+
 export interface Overview {
   today: LogicalDate;
   freshness: Freshness;
+  compound: CompoundData;
   adherence28: MetricResult;
   completeness28: MetricResult;
   habits: HabitCard[];
@@ -283,8 +327,47 @@ export async function buildOverview(db: PrismaClient): Promise<Overview> {
     return { date, value: evaluable === 0 ? null : hit / evaluable, evaluable };
   });
 
+  // --- Gráfico compuesto ---------------------------------------------------
+  // Sale del mismo `cell` que el heatmap: cero queries nuevas. La ventana
+  // arranca en el primer día del sistema, no 365 días atrás.
+  const compoundDays = heatDays.filter((d) => !systemStart || d >= systemStart);
+
+  const compoundLines: CompoundLineView[] = scored.map((m) => {
+    const series = compoundDays.map((d) => {
+      if (excludedDays.has(d)) return null;
+      const hit = cell.get(`metric:${m.key}|${d}`)?.hit;
+      return hit === undefined || hit === null ? null : hit ? 1 : 0;
+    });
+    return {
+      ...cumulativeLine(m.key, m.name, series),
+      pace: paceProjection(series, PACE_WARMUP_DAYS),
+    };
+  });
+
+  // La adherencia agregada de cada día. Es lo mismo que pinta el heatmap, leído
+  // como serie en vez de como grilla: el mismo dato, otra lectura.
+  const compoundDaily = compoundDays.map((d) => {
+    if (excludedDays.has(d)) return null;
+    let hit = 0;
+    let evaluable = 0;
+    for (const m of scored) {
+      const h = cell.get(`metric:${m.key}|${d}`)?.hit;
+      if (h === undefined || h === null) continue;
+      evaluable += 1;
+      if (h) hit += 1;
+    }
+    return evaluable === 0 ? null : hit / evaluable;
+  });
+
   return {
     today,
+    compound: {
+      days: compoundDays,
+      daily: compoundDaily,
+      trend: ewmaSeries(compoundDaily),
+      n: evaluableCount(compoundDaily),
+      lines: compoundLines,
+    },
     freshness: {
       lastRunAt: lastRun?.finishedAt ?? null,
       ok: lastRun?.ok ?? null,

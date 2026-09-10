@@ -1243,3 +1243,66 @@ h1, h2, h3, h4 { margin: 0; }
 .ci-habit__amount span { font: var(--ds-label-12-mono); opacity: .6; }
 .ci-habit.is-on .ci-habit__amount { border-left-color: var(--ds-gray-alpha-500); }
 .sleep__problem { font: var(--ds-copy-13); color: var(--ds-red-700); margin-top: 10px; }
+
+/* --- El compuesto: acumulado y analítico ---------------------------------- */
+/* Todo con tokens --ds-*: el tema oscuro los redefine en [data-theme="dark"],
+   así que el gráfico cambia de tema sin una sola regla propia. */
+.cmp { margin-top: 34px; }
+.cmp__head { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  flex-wrap: wrap; }
+.cmp__lead { font: var(--ds-copy-13); color: var(--ds-gray-700); margin: 10px 0 4px; }
+.cmp__empty { font: var(--ds-copy-14); color: var(--ds-gray-700); margin-top: 10px; }
+
+/* Pestañas con radios nativos: navegables con flechas, sin JavaScript. */
+.cmp__radio { position: absolute; opacity: 0; pointer-events: none; }
+.cmp__tabs { display: flex; gap: 0; border: 1px solid var(--ds-gray-alpha-400);
+  border-radius: var(--ds-radius-md); overflow: hidden; }
+.cmp__tabs label { font: var(--ds-label-12-mono); color: var(--ds-gray-700); cursor: pointer;
+  padding: 6px 12px; user-select: none; }
+.cmp__tabs label + input + label { border-left: 1px solid var(--ds-gray-alpha-400); }
+.cmp:has(#cmp-view-acc:checked) label[for="cmp-view-acc"],
+.cmp:has(#cmp-view-ana:checked) label[for="cmp-view-ana"] {
+  background: var(--ds-gray-1000); color: var(--ds-background-100); }
+.cmp__radio:focus-visible + label { outline: 2px solid var(--ds-blue-700); outline-offset: -2px; }
+
+.cmp__pane { display: none; }
+.cmp:has(#cmp-view-acc:checked) .cmp__pane--acc,
+.cmp:has(#cmp-view-ana:checked) .cmp__pane--ana { display: block; }
+
+/* Scroll horizontal en pantallas angostas, igual que el heatmap: comprimir el
+   SVG haría ilegibles las etiquetas del eje. */
+.cmp__scroll { overflow-x: auto; margin-top: 6px; }
+.cmp__scroll svg { display: block; }
+
+.cmp__grid { stroke: var(--ds-gray-alpha-300); stroke-width: 1; }
+.cmp__axis { stroke: var(--ds-gray-alpha-400); stroke-width: 1; }
+.cmp__tick { font: var(--ds-label-12-mono); fill: var(--ds-gray-700); }
+
+.cmp__line { fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.cmp__line--a { stroke: var(--ds-gray-1000); }
+.cmp__line--b { stroke: var(--ds-gray-700); }
+.cmp__line--c { stroke: var(--ds-gray-500); }
+
+.cmp__dot { fill: var(--ds-gray-alpha-400); }
+.cmp__trend { fill: none; stroke: var(--ds-blue-700); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round; }
+
+.cmp__legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex;
+  flex-direction: column; gap: 7px; }
+.cmp__legend li { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  font: var(--ds-copy-13); }
+.cmp__legend strong { font: var(--ds-label-14); color: var(--ds-gray-1000); }
+.cmp__key { width: 22px; height: 0; border-top-width: 2px; border-top-style: solid;
+  flex: none; align-self: center; }
+.cmp__key.cmp__line--a { border-top-color: var(--ds-gray-1000); }
+.cmp__key.cmp__line--b { border-top-color: var(--ds-gray-700); }
+.cmp__key.cmp__line--c { border-top-color: var(--ds-gray-500); }
+.cmp__key[data-dash="7 4"] { border-top-style: dashed; }
+.cmp__key[data-dash="2 3"] { border-top-style: dotted; }
+.cmp__count { font: var(--ds-label-12-mono); color: var(--ds-gray-700); }
+.cmp__pace { font: var(--ds-label-12-mono); }
+.cmp__note { font: var(--ds-copy-13); color: var(--ds-gray-700); margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .cmp__head { align-items: flex-start; }
+}

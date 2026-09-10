@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CompoundChart } from "~/components/panel/compound-chart";
 import { HeatmapYear } from "~/components/panel/heatmap-year";
 import { Sparkline } from "~/components/panel/sparkline";
 import { longDayLabel } from "~/lib/panel/format";
@@ -46,6 +47,11 @@ export default async function PanelHome() {
         <h2>El año</h2>
         <HeatmapYear days={o.heatmap} />
       </section>
+
+      {/* El mismo dato del heatmap, leído como serie: una vez acumulado y una
+          vez como tasa. Va acá arriba porque es la lectura de conjunto; abajo
+          empieza el detalle métrica por métrica. */}
+      <CompoundChart data={o.compound} />
 
       {/* ---- Nivel 2: hábitos ---- */}
       {o.habits.length > 0 && (
