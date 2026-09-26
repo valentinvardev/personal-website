@@ -87,6 +87,34 @@ const projectPreview = {
   orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
 };
 
+/**
+ * La portada de un proyecto es su primera captura, en el mismo orden que usa
+ * `showcase.byProject`: la imagen del drawer es exactamente la pestaña con la
+ * que abre el modal al tocarla.
+ *
+ * Las capturas se piden EN PARALELO con los proyectos y sin filtrar por slug.
+ * Filtrar obligaría a esperar la primera query para conocer los slugs, y desde
+ * el VPS cada query a Supabase tarda alrededor de un segundo: en serie, la
+ * portada le sumaría ese segundo a cada carga del home. La tabla es chica
+ * (unas pocas capturas por proyecto), así que traerla entera sale más barato
+ * que esperar.
+ */
+const coverSections = {
+  orderBy: [{ sortOrder: "asc" as const }, { id: "asc" as const }],
+  select: { projectSlug: true, imageUrl: true },
+};
+
+function withCovers<T extends { slug: string }>(
+  rows: T[],
+  sections: { projectSlug: string; imageUrl: string }[],
+): (T & { coverUrl: string | null })[] {
+  const first = new Map<string, string>();
+  for (const s of sections) {
+    if (!first.has(s.projectSlug)) first.set(s.projectSlug, s.imageUrl);
+  }
+  return rows.map((r) => ({ ...r, coverUrl: first.get(r.slug) ?? null }));
+}
+
 export const catalogRouter = createTRPCRouter({
   /* ===================== Nichos ===================== */
 
@@ -103,18 +131,21 @@ export const catalogRouter = createTRPCRouter({
   nicheBySlug: publicProcedure
     .input(z.object({ slug: z.string().trim().min(1).max(100) }))
     .query(async ({ ctx, input }) => {
-      const niche = await ctx.db.niche.findUnique({
-        where: { slug: input.slug },
-        include: {
-          projects: {
-            orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-            include: { niche: { select: { slug: true, name: true, nameEn: true } } },
+      const [niche, sections] = await Promise.all([
+        ctx.db.niche.findUnique({
+          where: { slug: input.slug },
+          include: {
+            projects: {
+              orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+              include: { niche: { select: { slug: true, name: true, nameEn: true } } },
+            },
+            blocks: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
           },
-          blocks: { orderBy: [{ sortOrder: "asc" }, { id: "asc" }] },
-        },
-      });
+        }),
+        ctx.db.projectSection.findMany(coverSections),
+      ]);
       if (!niche) throw new TRPCError({ code: "NOT_FOUND" });
-      return niche;
+      return { ...niche, projects: withCovers(niche.projects, sections) };
     }),
 
   createNiche: adminProcedure.input(nicheInput).mutation(({ ctx, input }) => {
@@ -136,20 +167,28 @@ export const catalogRouter = createTRPCRouter({
 
   /* ===================== Proyectos ===================== */
 
-  projects: publicProcedure.query(({ ctx }) => {
-    return ctx.db.project.findMany({
-      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-      include: { niche: { select: { slug: true, name: true, nameEn: true } } },
-    });
+  projects: publicProcedure.query(async ({ ctx }) => {
+    const [rows, sections] = await Promise.all([
+      ctx.db.project.findMany({
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        include: { niche: { select: { slug: true, name: true, nameEn: true } } },
+      }),
+      ctx.db.projectSection.findMany(coverSections),
+    ]);
+    return withCovers(rows, sections);
   }),
 
-  featuredProjects: publicProcedure.query(({ ctx }) => {
-    return ctx.db.project.findMany({
-      where: { featured: true },
-      orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
-      take: 4,
-      include: { niche: { select: { slug: true, name: true, nameEn: true } } },
-    });
+  featuredProjects: publicProcedure.query(async ({ ctx }) => {
+    const [rows, sections] = await Promise.all([
+      ctx.db.project.findMany({
+        where: { featured: true },
+        orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+        take: 4,
+        include: { niche: { select: { slug: true, name: true, nameEn: true } } },
+      }),
+      ctx.db.projectSection.findMany(coverSections),
+    ]);
+    return withCovers(rows, sections);
   }),
 
   createProject: adminProcedure.input(projectInput).mutation(({ ctx, input }) => {

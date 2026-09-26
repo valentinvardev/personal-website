@@ -75,6 +75,25 @@ export function ProjectDrawer({
             <div className="drawer__role">{p.role}</div>
           </div>
         </div>
+        {p.coverUrl && (
+          // La portada es la primera captura: tocarla abre el modal en esa
+          // misma pestaña. El contenedor fija la proporción de las capturas,
+          // así el lugar queda reservado antes de que llegue la imagen y el
+          // texto de abajo no salta cuando termina de cargar.
+          <button
+            type="button"
+            className="drawer__cover"
+            onClick={() => setPreview(true)}
+            aria-label={`${t.projects.captures}: ${p.name}`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.coverUrl} alt="" decoding="async" />
+            <span className="drawer__cover-hint" aria-hidden="true">
+              <Icon name="camera" size={14} />
+              {t.projects.captures}
+            </span>
+          </button>
+        )}
         {/* Los párrafos del texto largo vienen separados por una línea en blanco.
             En un solo <p> el HTML colapsa el salto y todo se lee como un bloque. */}
         <div className="drawer__lead">

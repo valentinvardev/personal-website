@@ -1308,3 +1308,31 @@ h1, h2, h3, h4 { margin: 0; }
 @media (max-width: 640px) {
   .cmp__head { align-items: flex-start; }
 }
+
+/* --- Portada del drawer: la primera captura del proyecto ------------------ */
+/* aspect-ratio reserva el alto antes de que llegue la imagen: sin eso, el
+   texto de abajo salta cuando termina de cargar. 16/10 es la proporción de
+   las capturas (1440x900). object-position top: si alguna captura viene con
+   otra proporción, se recorta el pie y no la cabecera del sitio. */
+.drawer__cover { position: relative; display: block; width: 100%; aspect-ratio: 16 / 10;
+  margin: 0 0 20px; padding: 0; overflow: hidden; cursor: zoom-in; appearance: none;
+  background: var(--ds-gray-100); border: 1px solid var(--ds-gray-alpha-400);
+  border-radius: var(--ds-radius-md); }
+.drawer__cover img { display: block; width: 100%; height: 100%; object-fit: cover;
+  object-position: top; transition: transform .45s var(--ds-ease); }
+.drawer__cover:hover img { transform: scale(1.025); }
+.drawer__cover:focus-visible { outline: 2px solid var(--ds-blue-700); outline-offset: 2px; }
+.drawer__cover-hint { position: absolute; right: 10px; bottom: 10px; display: inline-flex;
+  align-items: center; gap: 6px; padding: 5px 9px; font: var(--ds-label-12);
+  color: var(--ds-gray-1000); background: var(--ds-background-100);
+  border: 1px solid var(--ds-gray-alpha-400); border-radius: var(--ds-radius-sm);
+  opacity: 0; transition: opacity .2s var(--ds-ease); }
+.drawer__cover:hover .drawer__cover-hint,
+.drawer__cover:focus-visible .drawer__cover-hint { opacity: 1; }
+/* En pantallas táctiles no hay hover: la pista queda siempre a la vista, si no
+   nada dice que la imagen se puede tocar. */
+@media (hover: none) { .drawer__cover-hint { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .drawer__cover img { transition: none; }
+  .drawer__cover:hover img { transform: none; }
+}

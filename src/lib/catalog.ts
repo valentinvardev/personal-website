@@ -61,6 +61,12 @@ export interface ProjectRecord {
   sortOrder: number;
   nicheId: number | null;
   niche?: { slug: string; name: string; nameEn: string | null } | null;
+  /**
+   * Primera captura del proyecto (la primera pestaña del modal). La adjuntan
+   * las queries públicas del catálogo; es opcional porque el admin trabaja
+   * sobre filas crudas que no la traen.
+   */
+  coverUrl?: string | null;
 }
 
 export interface NicheRecord {
@@ -105,6 +111,7 @@ export interface ProjectView {
   liveUrl: string | null;
   repoUrl: string | null;
   niche: { slug: string; name: string } | null;
+  coverUrl: string | null;
 }
 
 export interface NicheView {
@@ -162,6 +169,7 @@ export function resolveProject(row: ProjectRecord, lang: Lang): ProjectView {
     niche: row.niche
       ? { slug: row.niche.slug, name: pick(en, row.niche.nameEn, row.niche.name) }
       : null,
+    coverUrl: row.coverUrl ?? null,
   };
 }
 
