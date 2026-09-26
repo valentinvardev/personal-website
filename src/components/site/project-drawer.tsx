@@ -75,7 +75,13 @@ export function ProjectDrawer({
             <div className="drawer__role">{p.role}</div>
           </div>
         </div>
-        <p className="drawer__lead">{p.long || p.short}</p>
+        {/* Los párrafos del texto largo vienen separados por una línea en blanco.
+            En un solo <p> el HTML colapsa el salto y todo se lee como un bloque. */}
+        <div className="drawer__lead">
+          {(p.long || p.short).split(/\n\s*\n/).map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
+        </div>
         {p.features.length > 0 && (
           <>
             <h4 className="drawer__h">{t.projects.highlights}</h4>

@@ -793,6 +793,8 @@ h1, h2, h3, h4 { margin: 0; }
 .drawer__head h2 { font: var(--ds-heading-24); letter-spacing: var(--ds-tracking-24); }
 .drawer__role { font: var(--ds-label-14); color: var(--ds-gray-700); margin-top: 4px; }
 .drawer__lead { font: var(--ds-copy-16); color: var(--ds-gray-900); }
+.drawer__lead p { margin: 0; }
+.drawer__lead p + p { margin-top: 12px; }
 .drawer__h { font: var(--ds-label-13); color: var(--ds-gray-700); text-transform: uppercase; letter-spacing: .08em; margin: 28px 0 12px; }
 .drawer__list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
 .drawer__list li { display: flex; gap: 10px; align-items: flex-start; font: var(--ds-copy-14); color: var(--ds-gray-1000); }
