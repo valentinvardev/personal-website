@@ -475,7 +475,13 @@
    Portado de _geist-design/personal-site/index.html
    ===================================================================== */
 
-html { scroll-behavior: smooth; }
+/* scrollbar-gutter: el drawer y el menú móvil bloquean el scroll con
+   body{overflow:hidden}. En Windows eso hace desaparecer la barra, la página
+   entera se corre 15 px al abrir y vuelve de golpe al cerrar, y el shader de
+   fondo se redimensiona en medio de la animación. Reservar el canal de la
+   barra siempre elimina el salto (medido: layout shift 0,0052 -> 0). En
+   sistemas con barras superpuestas (macOS, móvil) no reserva nada. */
+html { scroll-behavior: smooth; scrollbar-gutter: stable; }
 body {
   margin: 0; font-family: var(--ds-font-sans); background: var(--ds-background-100); color: var(--ds-gray-1000);
   -webkit-font-smoothing: antialiased; transition: background-color .2s var(--ds-ease), color .2s var(--ds-ease);
@@ -768,7 +774,16 @@ h1, h2, h3, h4 { margin: 0; }
    un velo blanco) y el panel entra desde fuera con la curva de los sheets de
    iOS. El cierre corre las animaciones de salida antes de desmontar
    (.is-closing, mismo patrón que el menú móvil). */
-.drawer-scrim { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end;
+/* El fondo (tinte + blur) vive en ::before y NO en el scrim. Antes el scrim
+   animaba su propia opacidad y el panel, que es su hijo, la heredaba: se
+   deslizaba y a la vez se desvanecía, con otra duración y otra curva. Dos
+   animaciones sobre los mismos píxeles. Con el fondo en una capa aparte, el
+   panel solo se desliza, opaco, y el fondo solo se funde.
+   El ::before sigue dentro del scrim, así que un clic ahí cae en el onClick
+   del scrim y su animationend llega al scrim con target === currentTarget:
+   la lógica de cierre de project-drawer.tsx no cambia. */
+.drawer-scrim { position: fixed; inset: 0; z-index: 60; display: flex; justify-content: flex-end; }
+.drawer-scrim::before { content: ""; position: absolute; inset: 0;
   background: color-mix(in srgb, var(--ds-background-200) 25%, transparent);
   -webkit-backdrop-filter: blur(14px) saturate(130%); backdrop-filter: blur(14px) saturate(130%);
   animation: scrimIn .4s ease both; }
@@ -777,13 +792,14 @@ h1, h2, h3, h4 { margin: 0; }
   box-shadow: -24px 0 48px color-mix(in srgb, #000 10%, transparent); }
 @keyframes scrimIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
-/* Salida: el panel se va primero (.28s) y el blur se apaga después (.34s). */
-.drawer-scrim.is-closing { animation: scrimOut .34s ease both; }
+/* Salida: el panel se va primero (.28s) y el blur se apaga después (.34s).
+   El desmontaje espera al más largo, el del fondo. */
+.drawer-scrim.is-closing::before { animation: scrimOut .34s ease both; }
 .drawer-scrim.is-closing .drawer { animation: drawerOut .28s cubic-bezier(0.4, 0, 1, 1) both; }
 @keyframes scrimOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes drawerOut { from { transform: none; } to { transform: translateX(100%); } }
 @media (prefers-reduced-motion: reduce) {
-  .drawer-scrim, .drawer, .drawer-scrim.is-closing, .drawer-scrim.is-closing .drawer { animation: none; }
+  .drawer-scrim::before, .drawer, .drawer-scrim.is-closing::before, .drawer-scrim.is-closing .drawer { animation: none; }
   .drawer-scrim.is-closing { opacity: 0; }
 }
 .drawer__close { position: absolute; top: 20px; right: 20px; appearance: none; background: none; border: 1px solid var(--ds-gray-alpha-400); cursor: pointer;
